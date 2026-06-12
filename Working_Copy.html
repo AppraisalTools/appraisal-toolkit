@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appraisal Toolkit</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1f2435;
+    --border: #2a3045;
+    --border-active: #4a6fa5;
+    --accent: #4a9eff;
+    --accent2: #5bc8a0;
+    --warn: #e8a240;
+    --danger: #e05555;
+    --text: #e8eaf0;
+    --text-dim: #7a849a;
+    --text-label: #a0aec0;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 36px 20px 60px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(74,110,165,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(91,200,160,0.05) 0%, transparent 50%);
+  }
+
+  /* ── App Header ── */
+  .app-header {
+    width: 100%;
+    max-width: 920px;
+    margin-bottom: 28px;
+  }
+
+  .app-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .app-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Tab Bar ── */
+  .tab-bar {
+    width: 100%;
+    max-width: 920px;
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .tab-btn:hover { color: var(--text); background: var(--surface2); }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    border-color: var(--border-active);
+    color: var(--accent);
+  }
+
+  .tab-btn .tab-icon {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 3px;
+    letter-spacing: 0;
+  }
+
+  /* ── Panels ── */
+  .panel { display: none; width: 100%; max-width: 920px; }
+  .panel.active { display: block; animation: panelIn 0.25s ease; }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Shared ── */
+  .panel-header {
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .panel-subtitle {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Shared input styles */
+  .input-wrap { position: relative; }
+  .input-wrap .prefix,
+  .input-wrap .suffix {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono); font-size: 13px; color: var(--text-dim); pointer-events: none;
+  }
+  .input-wrap .prefix { left: 12px; }
+  .input-wrap .suffix { right: 12px; }
+
+  input[type="number"] {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px;
+    padding: 11px 12px; outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    -moz-appearance: textfield; appearance: textfield;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .has-prefix input[type="number"] { padding-left: 22px; }
+  .has-suffix input[type="number"] { padding-right: 30px; }
+  input[type="number"]:focus { border-color: var(--border-active); background: var(--surface2); }
+  input[type="number"]:hover:not(:focus) { border-color: #3a4560; }
+
+  /* Shared select style */
+  .styled-select {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: var(--mono); font-size: 13px;
+    padding: 7px 32px 7px 12px; outline: none; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a849a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .styled-select:hover { border-color: var(--border-active); background-color: var(--surface2); }
+  .styled-select:focus { border-color: var(--accent); background-color: var(--surface2); }
+  .styled-select option { background: #1f2435; color: var(--text); }
+
+  /* Shared button */
+  .btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 9px 18px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--border-active); color: var(--text); background: var(--surface); }
+
+  .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  .comp-count-row { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .comp-count-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-dim); white-space: nowrap;
+  }
+
+  .footer-note {
+    margin-top: 36px; font-size: 11px; color: var(--text-dim);
+    font-family: var(--mono); text-align: center; letter-spacing: 0.03em; line-height: 1.8;
+    width: 100%; max-width: 920px;
+  }
+
+  /* ══════════════════════════════════
+     TOOL 1 — WEIGHTED RECONCILIATION
+  ══════════════════════════════════ */
+  #panel-wrec { max-width: 800px; }
+
+  .wrc-col-headers {
+    display: grid; grid-template-columns: 90px 1fr 140px 1fr;
+    gap: 12px; padding: 0 0 10px; margin-bottom: 4px;
+  }
+  .wrc-col-headers span {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+  .wrc-col-headers span:last-child { text-align: right; }
+
+  .wrc-comp-row {
+    display: grid; grid-template-columns: 90px 1fr 140px 1fr;
+    gap: 12px; align-items: center; margin-bottom: 10px;
+    animation: fadeIn 0.3s ease both;
+  }
+  .wrc-comp-label { font-family: var(--mono); font-size: 12px; color: var(--text-label); font-weight: 500; }
+
+  .wrc-weighted-val { text-align: right; font-family: var(--mono); font-size: 14px; color: var(--accent2); font-weight: 500; transition: all 0.2s; }
+  .wrc-weighted-val.zero { color: var(--text-dim); }
+
+  .wrc-totals-row { display: grid; grid-template-columns: 90px 1fr 140px 1fr; gap: 12px; align-items: center; }
+  .wrc-totals-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--text-dim); text-transform: uppercase; }
+
+  .wrc-total-pct { font-family: var(--mono); font-size: 16px; font-weight: 600; transition: color 0.2s; }
+  .wrc-total-pct.ok    { color: var(--accent2); }
+  .wrc-total-pct.over  { color: var(--danger); }
+  .wrc-total-pct.under { color: var(--warn); }
+
+  .wrc-total-val { text-align: right; font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--accent); transition: all 0.25s; }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 100px; margin-left: 10px; transition: all 0.2s;
+  }
+  .status-pill.ok    { background: rgba(91,200,160,0.12); color: var(--accent2); border: 1px solid rgba(91,200,160,0.25); }
+  .status-pill.over  { background: rgba(224,85,85,0.12);  color: var(--danger);  border: 1px solid rgba(224,85,85,0.25); }
+  .status-pill.under { background: rgba(232,162,64,0.12); color: var(--warn);    border: 1px solid rgba(232,162,64,0.25); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ══════════════════════════════════
+     TOOL 2 — BASEMENT ADJUSTMENT
+  ══════════════════════════════════ */
+  .bac-rates-row { display: flex; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; }
+
+  .bac-rate-box {
+    flex: 1; min-width: 180px; max-width: 240px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; transition: border-color 0.15s;
+  }
+  .bac-rate-box:focus-within { border-color: var(--border-active); background: var(--surface2); }
+  .bac-rate-label { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+
+  .bac-rate-input-wrap { position: relative; }
+  .bac-rate-input-wrap .prefix { position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 14px; color: var(--text-dim); pointer-events: none; }
+  .bac-rate-input-wrap input {
+    width: 100%; background: transparent; border: none; border-bottom: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 20px; font-weight: 600;
+    padding: 4px 0 4px 16px; outline: none; -moz-appearance: textfield; appearance: textfield;
+  }
+  .bac-rate-input-wrap input::-webkit-outer-spin-button,
+  .bac-rate-input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .bac-rate-input-wrap input:focus { border-bottom-color: var(--accent); }
+
+  .bac-table-wrap { overflow-x: auto; }
+  .bac-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 700px; }
+
+  .bac-table thead th {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-dim); padding: 0 10px 12px; text-align: right; white-space: nowrap;
+  }
+  .bac-table thead th:first-child { text-align: left; }
+
+  .bac-table tbody tr { animation: fadeIn 0.3s ease both; }
+  .bac-table td { padding: 5px 6px; vertical-align: middle; }
+  .bac-table td:first-child {
+    font-family: var(--mono); font-size: 12px; color: var(--text-label);
+    font-weight: 500; padding-left: 0; white-space: nowrap; width: 80px;
+  }
+  .bac-table tr.subject-row td:first-child { color: var(--accent); }
+  .bac-table tr.divider-row td { padding: 6px 0 10px; }
+  .bac-table tr.divider-row td div { height: 1px; background: var(--border); }
+
+  .bac-cell-input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 13px;
+    padding: 9px 10px; outline: none; transition: border-color 0.15s, background 0.15s;
+    text-align: right; -moz-appearance: textfield; appearance: textfield;
+  }
+  .bac-cell-input::-webkit-outer-spin-button,
+  .bac-cell-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .bac-cell-input:focus { border-color: var(--border-active); background: var(--surface2); }
+  .bac-cell-input:hover:not(:focus) { border-color: #3a4560; }
+
+  .bac-calc { font-family: var(--mono); font-size: 13px; color: var(--text-dim); text-align: right; padding: 9px 10px; white-space: nowrap; }
+  .bac-calc.hl  { color: var(--accent2); }
+  .bac-calc.adj { font-weight: 600; font-size: 14px; }
+  .bac-calc.adj.pos  { color: var(--accent2); }
+  .bac-calc.adj.neg  { color: var(--danger); }
+  .bac-calc.adj.zero { color: var(--text-dim); }
+
+  /* ══════════════════════════════════
+     TOOL 3 — ESTIMATED TAX
+  ══════════════════════════════════ */
+  #panel-tax { max-width: 600px; }
+
+  .tax-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px 22px; margin-bottom: 14px; transition: border-color 0.15s;
+  }
+  .tax-card:focus-within { border-color: var(--border-active); }
+  .tax-field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .sc-badge { background: rgba(232,162,64,0.15); border: 1px solid rgba(232,162,64,0.3); color: var(--warn); font-size: 9px; padding: 2px 7px; border-radius: 100px; letter-spacing: 0.08em; }
+
+  .tax-select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px;
+    padding: 11px 36px 11px 14px; outline: none; cursor: pointer; transition: border-color 0.15s;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a849a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .tax-select:focus { border-color: var(--accent); }
+  .tax-select option { background: #1f2435; }
+
+  .tax-field-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 14px;
+    padding: 11px 12px; outline: none; transition: border-color 0.15s;
+    -moz-appearance: textfield; appearance: textfield;
+  }
+  .tax-field-input::-webkit-outer-spin-button,
+  .tax-field-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .tax-field-input:focus { border-color: var(--accent); }
+  .tax-field-input:hover:not(:focus) { border-color: #3a4560; }
+  .tax-has-prefix .tax-field-input { padding-left: 22px; }
+
+  .tax-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  .tax-result-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px 26px; margin-bottom: 14px; display: flex;
+    align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .tax-result-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .tax-result-annual { font-family: var(--mono); font-size: 36px; font-weight: 600; color: var(--accent); letter-spacing: -0.01em; transition: all 0.2s; }
+  .tax-result-annual.zero { color: var(--text-dim); font-size: 28px; }
+  .tax-result-monthly-wrap { text-align: right; }
+  .tax-result-monthly-wrap .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .tax-result-monthly { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--accent2); transition: all 0.2s; }
+  .tax-result-monthly.zero { color: var(--text-dim); }
+  .tax-breakdown { display: flex; justify-content: space-between; gap: 8px; font-family: var(--mono); font-size: 11px; flex-wrap: wrap; padding: 0 4px; margin-bottom: 14px; }
+  .tax-breakdown-item { color: var(--text-dim); }
+  .tax-breakdown-item span { color: var(--text-label); margin-left: 4px; }
+  .tax-rate-note { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 7px; letter-spacing: 0.04em; }
+  .tax-rate-note.sc { color: var(--warn); }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div class="app-header">
+  <div class="app-title">Appraisal Tools</div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('research', this)">
+    <span class="tab-icon">🔍</span>Research Launcher
+  </button>
+  <button class="tab-btn" onclick="switchTab('durham', this)" style="display:none;">
+    <span class="tab-icon">🏛</span>Durham Records
+  </button>
+  <button class="tab-btn" onclick="switchTab('boundaries', this)">
+    <span class="tab-icon">🗺</span>Neighborhood Boundaries
+  </button>
+  <button class="tab-btn" onclick="switchTab('wrec', this)">
+    <span class="tab-icon">⚖</span>Weighted Reconciliation
+  </button>
+  <button class="tab-btn" onclick="switchTab('bac', this)">
+    <span class="tab-icon">⬛</span>Basement Adjustment
+  </button>
+  <button class="tab-btn" onclick="switchTab('tax', this)">
+    <span class="tab-icon">$</span>Estimated Taxes
+  </button>
+  <button class="tab-btn" onclick="switchTab('inches', this)">
+    <span class="tab-icon">📐</span>Inches to Decimal
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 0 — RESEARCH LAUNCHER
+═══════════════════════════════════════ -->
+<div class="panel active" id="panel-research">
+  <div class="panel-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;">
+    <div>
+      <div class="panel-title">Address Research Launcher</div>
+      <div class="panel-subtitle">Select a county, then enter the subject address to launch all research tabs at once.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">County</div>
+      <select id="rl-county-select" class="styled-select" onchange="RL.onCountyChange(this.value)"
+        style="font-size:13px;min-width:155px;">
+        <option value="">— Select County —</option>
+        <option value="cabarrus">Cabarrus County</option>
+        <option value="durham">Durham County</option>
+        <option value="guilford">Guilford County</option>
+        <option value="iredell">Iredell County</option>
+        <option value="mecklenburg">Mecklenburg County</option>
+        <option value="wake">Wake County</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="max-width:560px;">
+
+  <!-- LEFT COLUMN -->
+  <div>
+
+    <!-- Property Records Websites button — always visible once county selected, hidden until then -->
+    <div id="rl-prop-btn-wrap" style="display:none;margin-bottom:20px;">
+      <button class="btn" id="rl-prop-btn" style="border-color:var(--accent2);color:var(--accent2);width:100%;padding:11px 18px;">🌐 Property Records Websites</button>
+    </div>
+
+    <!-- Address section — hidden until county selected -->
+    <div id="rl-addr-section" style="display:none;">
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Subject Address</div>
+        <input type="text" id="rl-fullAddr" placeholder="123 Test St, Testville, NC 21111"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;margin-bottom:10px;"
+          onkeydown="if(event.key==='Enter') RL.openSearch()">
+        <button class="btn" id="rl-search-btn" onclick="RL.openSearch()" style="border-color:var(--accent);color:var(--accent);">🔍 Search Public Records</button>
+        <div id="rl-search-hint" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:7px;"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- CABARRUS fields -->
+      <div id="rl-fields-cabarrus" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(14-digit)</span></div>
+          <input type="text" id="rl-cabarrus-parcel" placeholder="XXXXXXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- DURHAM fields -->
+      <div id="rl-fields-durham" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(6-digit)</span></div>
+          <input type="text" id="rl-reid" placeholder="XXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- GUILFORD fields -->
+      <div id="rl-fields-guilford" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID Number — Property Records</div>
+          <input type="text" id="rl-guilford-reid" placeholder="XXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- IREDELL fields -->
+      <div id="rl-fields-iredell" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(13-digit incl. decimal)</span></div>
+          <input type="text" id="rl-iredell-parcel" placeholder="XXXXXXXXXX.XXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- MECKLENBURG fields -->
+      <div id="rl-fields-mecklenburg" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PID — Polaris GIS &amp; Property Records <span style="color:var(--text-dim);font-size:9px;">(8-digit)</span></div>
+          <input type="text" id="rl-meck-pid" placeholder="XXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- WAKE fields -->
+      <div id="rl-fields-wake" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number (REID) — Property Records <span style="color:var(--text-dim);font-size:9px;">(7-digit)</span></div>
+          <input type="text" id="rl-parcel" placeholder="XXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN Number — GIS <span style="color:var(--text-dim);font-size:9px;">(10-digit)</span></div>
+          <input type="text" id="rl-pin" placeholder="XXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <div id="rl-err" style="display:none;color:var(--danger);font-family:var(--mono);font-size:12px;margin-bottom:12px;">⚠ Please fill in all required fields before launching.</div>
+
+      <button id="rl-launch-btn" onclick="RL.launchAll()" disabled
+        style="width:100%;padding:14px;background:var(--surface);color:var(--text-dim);font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:0.08em;border:1px solid var(--border);border-radius:7px;cursor:not-allowed;text-transform:uppercase;transition:all 0.2s;">
+        🚀 Launch All Research Tabs
+      </button>
+
+      <div id="rl-success" style="display:none;color:var(--accent2);font-family:var(--mono);font-size:12px;margin-top:12px;text-align:center;"></div>
+    </div>
+
+    <!-- No county selected placeholder -->
+    <div id="rl-fields-none" style="padding:20px 0;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">
+      ↑ Select a county above to begin
+    </div>
+
+  </div><!-- end left column -->
+
+  </div><!-- end max-width -->
+
+  <p class="footer-note" style="margin-top:24px;">Allow pop-ups from this page for tab launching to work &nbsp;·&nbsp; Select a county to begin</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 1 — WEIGHTED RECONCILIATION
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-wrec">
+  <div class="panel-header">
+    <div class="panel-title">Weighted Reconciliation Calculator</div>
+    <div class="panel-subtitle">Enter adjusted comp values and percentage weights. Weights must total 100%.</div>
+  </div>
+
+  <div class="comp-count-row">
+    <span class="comp-count-label">Number of Comps</span>
+    <select class="styled-select" id="wrc-count-select" onchange="WRC.setNumComps(parseInt(this.value))"></select>
+  </div>
+
+  <div class="wrc-col-headers">
+    <span></span><span>Adjusted Value</span><span>Weight</span>
+    <span style="text-align:right">Weighted Value</span>
+  </div>
+
+  <div id="wrc-rows"></div>
+
+  <hr class="divider">
+
+  <div class="wrc-totals-row">
+    <div class="wrc-totals-label">Totals</div>
+    <div></div>
+    <div style="display:flex;align-items:center;">
+      <span id="wrc-total-pct" class="wrc-total-pct under">0.00%</span>
+      <span id="wrc-status-pill" class="status-pill under">
+        <span class="status-dot"></span><span id="wrc-status-text">Under</span>
+      </span>
+    </div>
+    <div id="wrc-total-val" class="wrc-total-val">$0</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="WRC.copyText()" id="wrc-copy-btn">&#x2398; Copy Text</button>
+    <button class="btn" onclick="WRC.reset()">&#x21BA; Reset</button>
+  </div>
+
+  <p class="footer-note" style="margin-top:24px;">Weighted Value = Adjusted Value &times; Weight% &divide; 100 &nbsp;|&nbsp; Final Value = &Sigma; Weighted Values</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 2 — BASEMENT ADJUSTMENT
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-bac">
+  <div class="panel-header">
+    <div class="panel-title">Basement Adjustment Calculator</div>
+    <div class="panel-subtitle">Set per-square-foot rates, then enter finished and unfinished basement areas.</div>
+  </div>
+
+  <div class="bac-rates-row">
+    <div class="bac-rate-box">
+      <label class="bac-rate-label">Finished $/Sq Ft</label>
+      <div class="bac-rate-input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="bac-fin-rate" min="0" step="0.50" placeholder="0.00" oninput="BAC.recalcAll()">
+      </div>
+    </div>
+    <div class="bac-rate-box">
+      <label class="bac-rate-label">Unfinished $/Sq Ft</label>
+      <div class="bac-rate-input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="bac-unfin-rate" min="0" step="0.50" placeholder="0.00" oninput="BAC.recalcAll()">
+      </div>
+    </div>
+  </div>
+
+  <div class="comp-count-row">
+    <span class="comp-count-label">Number of Comps</span>
+    <select class="styled-select" id="bac-count-select" onchange="BAC.setNumComps(parseInt(this.value))"></select>
+  </div>
+
+  <div class="bac-table-wrap">
+    <table class="bac-table">
+      <thead>
+        <tr>
+          <th style="text-align:left"></th>
+          <th>Finished SF</th>
+          <th>Unfinished SF</th>
+          <th>Total SF</th>
+          <th>Fin $</th>
+          <th>Unfin $</th>
+          <th>Total $</th>
+          <th>Adjustment</th>
+        </tr>
+      </thead>
+      <tbody id="bac-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="BAC.copyText()" id="bac-copy-btn">&#x2398; Copy Text</button>
+    <button class="btn" onclick="BAC.reset()">&#x21BA; Reset</button>
+  </div>
+
+  <p class="footer-note" style="margin-top:24px;">Adjustment = Subject Total $ &minus; Comp Total $ &nbsp;|&nbsp; Positive = upward adjustment &nbsp;|&nbsp; Negative = downward adjustment</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 3 — ESTIMATED TAXES
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-tax">
+  <div class="panel-header">
+    <div class="panel-title">Estimated Tax Calculator</div>
+    <div class="panel-subtitle">Select a county, enter the opinion of market value, and get an estimated annual tax.</div>
+  </div>
+
+  <div class="tax-card">
+    <div class="tax-field-label">County</div>
+    <select class="tax-select" id="tax-county-select" onchange="TAX.onCountyChange()">
+      <option value="">— Select a County —</option>
+    </select>
+  </div>
+
+  <div class="tax-two-col">
+    <div class="tax-card">
+      <div class="tax-field-label" id="tax-rate-label">County Tax Rate</div>
+      <div class="input-wrap has-suffix" style="position:relative;">
+        <input type="number" class="tax-field-input has-suffix" id="tax-rate-input" min="0" step="0.001" placeholder="0.0000" oninput="TAX.recalc()" style="padding-right:50px;">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:11px;color:var(--text-dim);pointer-events:none;">/$100</span>
+      </div>
+      <div class="tax-rate-note" id="tax-rate-note">Rate per $100 of assessed value</div>
+    </div>
+    <div class="tax-card">
+      <div class="tax-field-label">Opinion of Market Value</div>
+      <div style="position:relative;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:13px;color:var(--text-dim);pointer-events:none;">$</span>
+        <input type="number" class="tax-field-input" id="tax-value-input" min="0" step="1000" placeholder="0" oninput="TAX.recalc()" style="padding-left:22px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="tax-result-card">
+    <div>
+      <div class="tax-result-label">Est. Annual Taxes</div>
+      <div class="tax-result-annual zero" id="tax-annual">—</div>
+    </div>
+  </div>
+
+  <div class="tax-breakdown" id="tax-breakdown" style="display:none;">
+    <div class="tax-breakdown-item">County: <span id="tax-bd-county">—</span></div>
+    <div class="tax-breakdown-item">Rate: <span id="tax-bd-rate">—</span></div>
+    <div class="tax-breakdown-item">Value: <span id="tax-bd-value">—</span></div>
+  </div>
+
+  <!-- Statement output -->
+  <div id="tax-statement-wrap" style="display:none; margin-bottom:14px;">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Report Statement</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;font-family:var(--mono);font-size:12px;color:var(--text-label);line-height:1.7;letter-spacing:0.02em;" id="tax-statement-text"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" onclick="TAX.copyStatement()" id="tax-stmt-btn">&#x2398; Copy Statement</button>
+    <button class="btn" onclick="TAX.copyText()" id="tax-copy-btn">&#x2398; Copy Text</button>
+    <button class="btn" onclick="TAX.reset()">&#x21BA; Reset</button>
+  </div>
+
+  <p class="footer-note" style="margin-top:24px;">
+    NC rates from NCDOR 2025–2026 (per $100 valuation). &nbsp;&#9888;&nbsp; Chester, Lancaster &amp; York are SC counties — rates are estimated effective rates and are editable.
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 5 — INCHES TO DECIMAL
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-inches">
+  <div class="panel-header">
+    <div class="panel-title">Inches to Decimal Converter</div>
+    <div class="panel-subtitle">Enter feet and inches — converts to decimal feet, rounded to the nearest 0.1.</div>
+  </div>
+
+  <div style="max-width:480px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Feet</div>
+        <div class="input-wrap">
+          <input type="number" id="inch-feet" min="0" step="1" placeholder="0" oninput="INCH.recalc()">
+        </div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Inches</div>
+        <div class="input-wrap has-suffix">
+          <input type="number" id="inch-inches" min="0" max="11" step="0.125" placeholder="0" oninput="INCH.recalc()">
+          <span class="suffix">"</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Decimal Feet</div>
+        <div id="inch-result" style="font-family:var(--mono);font-size:36px;font-weight:600;color:var(--accent);letter-spacing:-0.01em;">—</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Exact</div>
+        <div id="inch-exact" style="font-family:var(--mono);font-size:16px;color:var(--accent2);">—</div>
+      </div>
+    </div>
+
+    <!-- Quick reference table -->
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Quick Reference — Inches to Decimal</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">1" = <span style="color:var(--text-label);">0.1</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">2" = <span style="color:var(--text-label);">0.2</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">3" = <span style="color:var(--text-label);">0.3</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">4" = <span style="color:var(--text-label);">0.3</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">5" = <span style="color:var(--text-label);">0.4</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">6" = <span style="color:var(--text-label);">0.5</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">7" = <span style="color:var(--text-label);">0.6</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">8" = <span style="color:var(--text-label);">0.7</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">9" = <span style="color:var(--text-label);">0.8</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">10" = <span style="color:var(--text-label);">0.8</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">11" = <span style="color:var(--text-label);">0.9</span></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text-dim);text-align:center;">12" = <span style="color:var(--text-label);">1.0</span></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="INCH.reset()">&#x21BA; Reset</button>
+    </div>
+  </div>
+
+  <p class="footer-note" style="margin-top:24px;">Decimal = Feet + (Inches ÷ 12), rounded to nearest 0.1</p>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PANEL 6 — NEIGHBORHOOD BOUNDARIES
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-durham">
+  <div class="panel-header">
+    <div class="panel-title">Durham County Property Records</div>
+    <div class="panel-subtitle">Search Durham County properties — session stays active while this tab is open, enabling the Research Launcher search button.</div>
+  </div>
+  <div style="width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+    <iframe
+      src="https://taxcama.dconc.gov/camapwa/SearchProperty.aspx"
+      style="width:100%;height:700px;border:none;display:block;"
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
+<!-- Hidden session warmers -->
+<iframe src="https://lrcpwa.ncptscloud.com/guilford/parcel-search"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://tax.cabarruscounty.us/BasicSearch.aspx"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://property.spatialest.com/nc/mecklenburg/#/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://taxweb.iredellcountync.gov/PublicAccess/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+
+<div class="panel" id="panel-boundaries">
+  <div class="panel-header">
+    <div class="panel-title">Neighborhood Boundaries</div>
+    <div class="panel-subtitle">Search and visualize neighborhood boundary data.</div>
+  </div>
+  <div style="width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+    <iframe
+      src="https://codepen.io/tytriescoding/embed/ZYBaMow?default-tab=result&theme-id=dark"
+      style="width:100%;height:700px;border:none;display:block;"
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════
+   TAB SWITCHING
+════════════════════════════ */
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ════════════════════════════
+   SHARED HELPERS
+════════════════════════════ */
+function fmtDollar(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+function pad(str, len, right) { str = String(str); return right ? str.padStart(len) : str.padEnd(len); }
+function flashCopied(btnId) {
+  const btn = document.getElementById(btnId);
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  btn.style.borderColor = 'var(--accent2)';
+  btn.style.color = 'var(--accent2)';
+  setTimeout(() => { btn.textContent = orig; btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+}
+
+/* ════════════════════════════
+   TOOL 1 — WEIGHTED RECON
+════════════════════════════ */
+const WRC = (() => {
+  const MAX = 12;
+  let numComps = 6;
+  const state = Array.from({ length: MAX }, () => ({ value: 0, pct: 0 }));
+
+  function calcW(i) { return (state[i].value * state[i].pct) / 100; }
+
+  function updateTotals() {
+    const totalPct = state.slice(0, numComps).reduce((s, r) => s + r.pct, 0);
+    const totalVal = state.slice(0, numComps).reduce((s, _, i) => s + calcW(i), 0);
+    const pctEl = document.getElementById('wrc-total-pct');
+    const valEl = document.getElementById('wrc-total-val');
+    const pill  = document.getElementById('wrc-status-pill');
+    const txt   = document.getElementById('wrc-status-text');
+    pctEl.textContent = totalPct.toFixed(2) + '%';
+    valEl.textContent = fmtDollar(totalVal);
+    const cls   = Math.abs(totalPct - 100) < 0.01 ? 'ok' : totalPct > 100 ? 'over' : 'under';
+    pctEl.className = 'wrc-total-pct ' + cls;
+    pill.className  = 'status-pill ' + cls;
+    txt.textContent = cls === 'ok' ? '100%' : cls === 'over' ? 'Over' : 'Under';
+  }
+
+  function updateRow(i) {
+    const wv = calcW(i);
+    const el = document.getElementById('wrc-wv-' + i);
+    el.textContent = wv > 0 ? fmtDollar(wv) : '—';
+    el.className = 'wrc-weighted-val' + (wv === 0 ? ' zero' : '');
+    updateTotals();
+  }
+
+  function setNumComps(n) {
+    numComps = n;
+    for (let i = 0; i < MAX; i++) {
+      const row = document.getElementById('wrc-row-' + i);
+      if (!row) continue;
+      row.style.display = i < n ? '' : 'none';
+      if (i >= n) {
+        state[i] = { value: 0, pct: 0 };
+        const vi = document.getElementById('wrc-val-' + i);
+        const pi = document.getElementById('wrc-pct-' + i);
+        if (vi) vi.value = '';
+        if (pi) pi.value = '';
+        const wv = document.getElementById('wrc-wv-' + i);
+        if (wv) { wv.textContent = '—'; wv.className = 'wrc-weighted-val zero'; }
+      }
+    }
+    updateTotals();
+  }
+
+  function buildSelect() {
+    const sel = document.getElementById('wrc-count-select');
+    for (let n = 3; n <= MAX; n++) {
+      const opt = document.createElement('option');
+      opt.value = n; opt.textContent = n + ' Comps';
+      if (n === numComps) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function buildUI() {
+    const c = document.getElementById('wrc-rows');
+    c.innerHTML = '';
+    for (let i = 0; i < MAX; i++) {
+      const row = document.createElement('div');
+      row.className = 'wrc-comp-row'; row.id = 'wrc-row-' + i;
+      row.style.animationDelay = (i * 40) + 'ms';
+      row.innerHTML = `
+        <div class="wrc-comp-label">COMP ${i+1}</div>
+        <div class="input-wrap has-prefix">
+          <span class="prefix">$</span>
+          <input type="number" id="wrc-val-${i}" min="0" step="1000" placeholder="0"
+            oninput="WRC._state[${i}].value=parseFloat(this.value)||0;WRC._updateRow(${i})">
+        </div>
+        <div class="input-wrap has-suffix">
+          <input type="number" id="wrc-pct-${i}" min="0" max="100" step="1" placeholder="0"
+            oninput="WRC._state[${i}].pct=parseFloat(this.value)||0;WRC._updateRow(${i})">
+          <span class="suffix">%</span>
+        </div>
+        <div id="wrc-wv-${i}" class="wrc-weighted-val zero">—</div>`;
+      c.appendChild(row);
+    }
+  }
+
+  function reset() {
+    for (let i = 0; i < MAX; i++) {
+      state[i] = { value: 0, pct: 0 };
+      const vi = document.getElementById('wrc-val-' + i);
+      const pi = document.getElementById('wrc-pct-' + i);
+      if (vi) vi.value = ''; if (pi) pi.value = '';
+      const wv = document.getElementById('wrc-wv-' + i);
+      if (wv) { wv.textContent = '—'; wv.className = 'wrc-weighted-val zero'; }
+    }
+    updateTotals();
+  }
+
+  function copyText() {
+    const lines = [];
+    lines.push('\tADJUSTED VALUE\tPERCENTAGE\t\tWEIGHTED VALUE');
+    for (let i = 0; i < numComps; i++) {
+      const val = state[i].value > 0 ? '$' + state[i].value.toLocaleString('en-US') : '$0';
+      const pct = state[i].pct || 0;
+      const wv  = fmtDollar(calcW(i));
+      lines.push('COMP ' + (i+1) + '\t' + val + '\t\t' + pct + '\t\t' + wv);
+    }
+    const tPct = state.slice(0, numComps).reduce((s,r) => s+r.pct, 0);
+    const tVal = state.slice(0, numComps).reduce((s,_,i) => s+calcW(i), 0);
+    lines.push('\t          TOTAL PERCENTAGE: ' + tPct + '\tTOTAL VALUE: $' + Math.round(tVal).toLocaleString('en-US'));
+    navigator.clipboard.writeText(lines.join('\n')).then(() => flashCopied('wrc-copy-btn'));
+  }
+
+  function init() { buildSelect(); buildUI(); setNumComps(numComps); }
+
+  return { init, setNumComps, reset, copyText, _state: state, _updateRow: updateRow };
+})();
+
+/* ════════════════════════════
+   TOOL 2 — BASEMENT ADJUSTMENT
+════════════════════════════ */
+const BAC = (() => {
+  const MAX = 12;
+  let numComps = 6;
+  const state = Array.from({ length: MAX + 1 }, () => ({ fin: 0, unfin: 0 }));
+
+  function getRate(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function calcRow(idx) {
+    const finRate = getRate('bac-fin-rate'), unfinRate = getRate('bac-unfin-rate');
+    const fin = state[idx].fin, unfin = state[idx].unfin;
+    return { totalSF: fin+unfin, finD: fin*finRate, unfinD: unfin*unfinRate, totalD: (fin*finRate)+(unfin*unfinRate) };
+  }
+
+  function recalcAll() {
+    const subj = calcRow(0);
+    setCalc('bac-subj', subj, null);
+    for (let i = 1; i <= numComps; i++) {
+      const comp = calcRow(i);
+      setCalc('bac-comp-'+i, comp, subj.totalD - comp.totalD);
+    }
+  }
+
+  function setCalc(prefix, data, adj) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set(prefix+'-tsf', data.totalSF > 0 ? data.totalSF.toLocaleString('en-US') : '—');
+    set(prefix+'-fin', data.finD > 0 ? fmtDollar(data.finD) : '—');
+    set(prefix+'-unf', data.unfinD > 0 ? fmtDollar(data.unfinD) : '—');
+    set(prefix+'-tot', data.totalD > 0 ? fmtDollar(data.totalD) : '—');
+    if (adj !== null) {
+      const el = document.getElementById(prefix+'-adj');
+      if (el) {
+        el.textContent = (data.totalD === 0 && calcRow(0).totalD === 0) ? '—' : (adj < 0 ? '-' : '') + Math.abs(Math.round(adj)).toLocaleString('en-US');
+        el.className = 'bac-calc adj ' + (adj > 0 ? 'pos' : adj < 0 ? 'neg' : 'zero');
+      }
+    }
+  }
+
+  function buildRow(label, prefix, isSubject, stateIdx, delay) {
+    const tr = document.createElement('tr');
+    if (isSubject) tr.classList.add('subject-row');
+    tr.style.animationDelay = delay + 'ms';
+    tr.innerHTML = `
+      <td>${label}</td>
+      <td><input type="number" class="bac-cell-input" id="${prefix}-fin-in" min="0" step="1" placeholder="0"
+        oninput="BAC._state[${stateIdx}].fin=parseFloat(this.value)||0;BAC.recalcAll()"></td>
+      <td><input type="number" class="bac-cell-input" id="${prefix}-unf-in" min="0" step="1" placeholder="0"
+        oninput="BAC._state[${stateIdx}].unfin=parseFloat(this.value)||0;BAC.recalcAll()"></td>
+      <td><div class="bac-calc" id="${prefix}-tsf">—</div></td>
+      <td><div class="bac-calc hl" id="${prefix}-fin">—</div></td>
+      <td><div class="bac-calc hl" id="${prefix}-unf">—</div></td>
+      <td><div class="bac-calc hl" id="${prefix}-tot">—</div></td>
+      ${isSubject ? '<td></td>' : `<td><div class="bac-calc adj zero" id="${prefix}-adj">—</div></td>`}`;
+    return tr;
+  }
+
+  function buildUI() {
+    const tbody = document.getElementById('bac-tbody');
+    tbody.innerHTML = '';
+    tbody.appendChild(buildRow('SUBJECT', 'bac-subj', true, 0, 0));
+    const div = document.createElement('tr');
+    div.className = 'divider-row';
+    div.innerHTML = '<td colspan="8"><div></div></td>';
+    tbody.appendChild(div);
+    for (let i = 1; i <= MAX; i++) {
+      const row = buildRow('COMP '+i, 'bac-comp-'+i, false, i, i*40);
+      row.id = 'bac-row-'+i;
+      tbody.appendChild(row);
+    }
+  }
+
+  function setNumComps(n) {
+    numComps = n;
+    for (let i = 1; i <= MAX; i++) {
+      const row = document.getElementById('bac-row-'+i);
+      if (row) {
+        row.style.display = i <= n ? '' : 'none';
+        if (i > n) {
+          state[i] = { fin: 0, unfin: 0 };
+          const fi = document.getElementById('bac-comp-'+i+'-fin-in');
+          const ui = document.getElementById('bac-comp-'+i+'-unf-in');
+          if (fi) fi.value = ''; if (ui) ui.value = '';
+        }
+      }
+    }
+    recalcAll();
+  }
+
+  function buildSelect() {
+    const sel = document.getElementById('bac-count-select');
+    for (let n = 3; n <= MAX; n++) {
+      const opt = document.createElement('option');
+      opt.value = n; opt.textContent = n + ' Comps';
+      if (n === numComps) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function reset() {
+    for (let i = 0; i <= MAX; i++) state[i] = { fin: 0, unfin: 0 };
+    document.getElementById('bac-fin-rate').value = '';
+    document.getElementById('bac-unfin-rate').value = '';
+    document.querySelectorAll('.bac-cell-input').forEach(el => el.value = '');
+    recalcAll();
+  }
+
+  function copyText() {
+    const finRate = getRate('bac-fin-rate'), unfinRate = getRate('bac-unfin-rate');
+    const subj = calcRow(0);
+    const lines = ['BASEMENT ADJUSTMENT CALCULATOR', '',
+      'Finished $/SF: '+fmtDollar(finRate)+'   Unfinished $/SF: '+fmtDollar(unfinRate), '',
+      pad('',10)+pad('FIN SF',10)+pad('UNFIN SF',11)+pad('TOTAL SF',11)+pad('FIN $',10)+pad('UNFIN $',10)+pad('TOTAL $',10)+'ADJUSTMENT', '',
+      pad('SUBJECT',10)+pad(state[0].fin||0,10)+pad(state[0].unfin||0,11)+pad(subj.totalSF,11)+pad(fmtDollar(subj.finD),10)+pad(fmtDollar(subj.unfinD),10)+pad(fmtDollar(subj.totalD),10), ''];
+    for (let i = 1; i <= numComps; i++) {
+      const comp = calcRow(i);
+      const adj = subj.totalD - comp.totalD;
+      lines.push(pad('COMP '+i,10)+pad(state[i].fin||0,10)+pad(state[i].unfin||0,11)+pad(comp.totalSF,11)+pad(fmtDollar(comp.finD),10)+pad(fmtDollar(comp.unfinD),10)+pad(fmtDollar(comp.totalD),10)+((adj<0?'-':'')+Math.abs(Math.round(adj)).toLocaleString('en-US')));
+    }
+    navigator.clipboard.writeText(lines.join('\n')).then(() => flashCopied('bac-copy-btn'));
+  }
+
+  function init() { buildSelect(); buildUI(); setNumComps(numComps); }
+  return { init, setNumComps, recalcAll, reset, copyText, _state: state };
+})();
+
+/* ════════════════════════════
+   TOOL 3 — ESTIMATED TAX
+════════════════════════════ */
+const TAX = (() => {
+  const COUNTIES = [
+    { name:'Alamance',    state:'NC', rate:0.4940 },
+    { name:'Cabarrus',    state:'NC', rate:0.5760 },
+    { name:'Catawba',     state:'NC', rate:0.3985 },
+    { name:'Chatham',     state:'NC', rate:0.6000 },
+    { name:'Chester',     state:'SC', rate:0.6600, sc:true },
+    { name:'Davidson',    state:'NC', rate:0.5400 },
+    { name:'Davie',       state:'NC', rate:0.6486 },
+    { name:'Durham',      state:'NC', rate:0.5542 },
+    { name:'Forsyth',     state:'NC', rate:0.5352 },
+    { name:'Franklin',    state:'NC', rate:0.5050 },
+    { name:'Gaston',      state:'NC', rate:0.5990 },
+    { name:'Guilford',    state:'NC', rate:0.7305 },
+    { name:'Harnett',     state:'NC', rate:0.5910 },
+    { name:'Iredell',     state:'NC', rate:0.5000 },
+    { name:'Johnston',    state:'NC', rate:0.5200 },
+    { name:'Lancaster',   state:'SC', rate:0.5500, sc:true },
+    { name:'Lincoln',     state:'NC', rate:0.4990 },
+    { name:'Mecklenburg', state:'NC', rate:0.4927 },
+    { name:'Nash',        state:'NC', rate:0.6300 },
+    { name:'Rowan',       state:'NC', rate:0.5800 },
+    { name:'Union',       state:'NC', rate:0.4342 },
+    { name:'Wake',        state:'NC', rate:0.5171 },
+    { name:'Wilson',      state:'NC', rate:0.5950 },
+    { name:'York',        state:'SC', rate:0.4600, sc:true },
+  ];
+
+  function buildSelect() {
+    const sel = document.getElementById('tax-county-select');
+    COUNTIES.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = c.name + ' County, ' + c.state;
+      sel.appendChild(opt);
+    });
+  }
+
+  function onCountyChange() {
+    const idx = parseInt(document.getElementById('tax-county-select').value);
+    if (isNaN(idx)) {
+      document.getElementById('tax-rate-input').value = '';
+      document.getElementById('tax-rate-note').textContent = 'Rate per $100 of assessed value';
+      document.getElementById('tax-rate-note').className = 'tax-rate-note';
+      document.getElementById('tax-rate-label').innerHTML = 'County Tax Rate';
+    } else {
+      const c = COUNTIES[idx];
+      document.getElementById('tax-rate-input').value = c.rate.toFixed(4);
+      if (c.sc) {
+        document.getElementById('tax-rate-note').textContent = 'SC county — estimated effective rate. Verify with county assessor.';
+        document.getElementById('tax-rate-note').className = 'tax-rate-note sc';
+        document.getElementById('tax-rate-label').innerHTML = 'County Tax Rate <span class="sc-badge">SC — ESTIMATE</span>';
+      } else {
+        document.getElementById('tax-rate-note').textContent = 'NCDOR 2025–2026 official rate per $100 valuation';
+        document.getElementById('tax-rate-note').className = 'tax-rate-note';
+        document.getElementById('tax-rate-label').innerHTML = 'County Tax Rate';
+      }
+    }
+    recalc();
+  }
+
+  function recalc() {
+    const rate  = parseFloat(document.getElementById('tax-rate-input').value) || 0;
+    const value = parseFloat(document.getElementById('tax-value-input').value) || 0;
+    const annual = (rate * value) / 100;
+    const annEl = document.getElementById('tax-annual');
+    const bd    = document.getElementById('tax-breakdown');
+    const stmtWrap = document.getElementById('tax-statement-wrap');
+    const stmtText = document.getElementById('tax-statement-text');
+    if (annual > 0) {
+      annEl.textContent = fmtDollar(annual); annEl.className = 'tax-result-annual';
+      bd.style.display = 'flex';
+      const idx = parseInt(document.getElementById('tax-county-select').value);
+      const countyName = isNaN(idx) ? 'Custom' : COUNTIES[idx].name;
+      document.getElementById('tax-bd-county').textContent = isNaN(idx) ? 'Custom' : COUNTIES[idx].name+' County, '+COUNTIES[idx].state;
+      document.getElementById('tax-bd-rate').textContent   = rate.toFixed(4)+' per $100';
+      document.getElementById('tax-bd-value').textContent  = fmtDollar(value);
+      stmtWrap.style.display = 'block';
+      stmtText.textContent = 'DUE TO THE SUBJECT BEING A NEW CONSTRUCTION, CURRENT TAX INFORMATION IS NOT AVAILABLE.  THE SUBJECT\'S TAXES WERE ESTIMATED WITH ' + countyName.toUpperCase() + ' COUNTY TAX RATES';
+    } else {
+      annEl.textContent = '—'; annEl.className = 'tax-result-annual zero';
+      bd.style.display = 'none';
+      stmtWrap.style.display = 'none';
+    }
+  }
+
+  function copyStatement() {
+    const stmtText = document.getElementById('tax-statement-text');
+    if (!stmtText || !stmtText.textContent) return;
+    navigator.clipboard.writeText(stmtText.textContent).then(() => flashCopied('tax-stmt-btn'));
+  }
+
+  function reset() {
+    document.getElementById('tax-county-select').value = '';
+    document.getElementById('tax-rate-input').value = '';
+    document.getElementById('tax-value-input').value = '';
+    document.getElementById('tax-rate-note').textContent = 'Rate per $100 of assessed value';
+    document.getElementById('tax-rate-note').className = 'tax-rate-note';
+    document.getElementById('tax-rate-label').innerHTML = 'County Tax Rate';
+    document.getElementById('tax-statement-wrap').style.display = 'none';
+    recalc();
+  }
+
+  function copyText() {
+    const idx = parseInt(document.getElementById('tax-county-select').value);
+    const county = isNaN(idx) ? 'Custom' : COUNTIES[idx].name+' County, '+COUNTIES[idx].state;
+    const isSC   = !isNaN(idx) && COUNTIES[idx].sc;
+    const rate   = parseFloat(document.getElementById('tax-rate-input').value) || 0;
+    const value  = parseFloat(document.getElementById('tax-value-input').value) || 0;
+    const annual = (rate * value) / 100;
+    const lines = ['ESTIMATED TAX CALCULATOR', '',
+      'County:            '+county,
+      'Tax Rate:          '+rate.toFixed(4)+' per $100 valuation'+(isSC?' (SC estimated effective rate)':' (NCDOR 2025-2026)'),
+      'Opinion of Value:  '+fmtDollar(value), '',
+      'Est. Annual Taxes: '+fmtDollar(annual), '',
+      'Formula: '+fmtDollar(value)+' x '+rate.toFixed(4)+' / 100 = '+fmtDollar(annual)];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => flashCopied('tax-copy-btn'));
+  }
+
+  function init() { buildSelect(); }
+  return { init, onCountyChange, recalc, reset, copyText, copyStatement };
+})();
+
+/* ── Boot ── */
+WRC.init();
+BAC.init();
+TAX.init();
+
+
+/* ════════════════════════════
+   RESEARCH LAUNCHER
+════════════════════════════ */
+const RL = (() => {
+
+  const COUNTIES = {
+    cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
+    durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
+    guilford:    { name: 'Guilford County',    searchHint: 'Opens Guilford County records — copy the REID into the field below' },
+    iredell:     { name: 'Iredell County',     searchHint: 'Opens Iredell County records — copy the parcel number into the field below' },
+    mecklenburg: { name: 'Mecklenburg County', searchHint: 'Opens Mecklenburg County Spatialest — search by address, then copy the PID into the field below' },
+    wake:        { name: 'Wake County',        searchHint: 'Opens Wake County records pre-filled — copy the REID and PIN into the fields below' },
+  };
+
+  const STREET_SUFFIXES = /\b(ave|avenue|blvd|boulevard|cir|circle|ct|court|dr|drive|expy|expressway|fwy|freeway|hwy|highway|ln|lane|pkwy|parkway|pl|place|rd|road|sq|square|st|street|ter|terrace|trl|trail|way|wy)\b\.?$/i;
+  function stripSuffix(n) { return n.replace(STREET_SUFFIXES, '').trim(); }
+
+  // Parse "114 Polo Dr, Salisbury, NC 28144" → { num, street, full }
+  function parseAddr(full) {
+    const m = full.trim().match(/^(\d+)\s+(.+?)(?:,|$)/);
+    return { full: full.trim(), num: m ? m[1] : '', street: m ? stripSuffix(m[2].trim()) : full.trim() };
+  }
+
+  function openPropertySites() {
+    const county = document.getElementById('rl-county-select').value;
+    if (county === 'cabarrus') {
+      window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
+      setTimeout(() => window.open('https://location.cabarruscounty.us/mapcabarrus/', '_blank'), 150);
+    } else if (county === 'durham') {
+      window.open('https://taxcama.dconc.gov/camapwa/SearchProperty.aspx', '_blank');
+      setTimeout(() => window.open('https://maps.durhamnc.gov/', '_blank'), 150);
+    } else if (county === 'guilford') {
+      window.open('https://lrcpwa.ncptscloud.com/guilford/parcel-search', '_blank');
+      setTimeout(() => window.open('https://gisdv.guilfordcountync.gov/Guilford/', '_blank'), 150);
+    } else if (county === 'iredell') {
+      window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
+      setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281', '_blank'), 150);
+    } else if (county === 'mecklenburg') {
+      window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
+      setTimeout(() => window.open('https://polaris3g.mecklenburgcountync.gov/', '_blank'), 150);
+    } else if (county === 'wake') {
+      window.open('https://services.wake.gov/realestate/', '_blank');
+      setTimeout(() => window.open('https://maps.raleighnc.gov/imaps/', '_blank'), 150);
+    }
+  }
+
+  function onCountyChange(value) {
+    document.getElementById('rl-fields-cabarrus').style.display    = 'none';
+    document.getElementById('rl-fields-durham').style.display      = 'none';
+    document.getElementById('rl-fields-guilford').style.display    = 'none';
+    document.getElementById('rl-fields-iredell').style.display     = 'none';
+    document.getElementById('rl-fields-mecklenburg').style.display = 'none';
+    document.getElementById('rl-fields-wake').style.display        = 'none';
+    document.getElementById('rl-err').style.display           = 'none';
+    document.getElementById('rl-success').style.display       = 'none';
+
+    const btn      = document.getElementById('rl-launch-btn');
+    const hint     = document.getElementById('rl-search-hint');
+    const addrSec  = document.getElementById('rl-addr-section');
+    const noneMsg  = document.getElementById('rl-fields-none');
+    const propWrap = document.getElementById('rl-prop-btn-wrap');
+    const propBtn  = document.getElementById('rl-prop-btn');
+
+    if (!value) {
+      addrSec.style.display  = 'none';
+      noneMsg.style.display  = 'block';
+      propWrap.style.display = 'none';
+      btn.disabled = true;
+      btn.style.cssText = 'width:100%;padding:14px;background:var(--surface);color:var(--text-dim);font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:0.08em;border:1px solid var(--border);border-radius:7px;cursor:not-allowed;text-transform:uppercase;transition:all 0.2s;';
+      hint.textContent = '';
+      return;
+    }
+
+    noneMsg.style.display  = 'none';
+    addrSec.style.display  = 'block';
+    propWrap.style.display = 'block';
+    propBtn.onclick = openPropertySites;
+    document.getElementById('rl-fields-' + value).style.display = 'block';
+    hint.textContent = COUNTIES[value].searchHint;
+
+    btn.disabled = false;
+    btn.style.cssText = 'width:100%;padding:14px;background:var(--accent);color:#fff;font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:0.08em;border:none;border-radius:7px;cursor:pointer;text-transform:uppercase;transition:all 0.2s;';
+  }
+
+  function openSearch() {
+    const county = document.getElementById('rl-county-select').value;
+    const full   = document.getElementById('rl-fullAddr').value.trim();
+    if (!full) { alert('Enter the subject address first.'); return; }
+    const { num, street } = parseAddr(full);
+    if (county === 'cabarrus') {
+      window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
+    } else if (county === 'durham') {
+      window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
+    } else if (county === 'guilford') {
+      window.open('https://lrcpwa.ncptscloud.com/guilford/parcel-search', '_blank');
+    } else if (county === 'iredell') {
+      window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
+    } else if (county === 'mecklenburg') {
+      window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
+    } else if (county === 'wake') {
+      window.open(`https://services.wake.gov/realestate/Account.asp?stype=addr&stnum=${encodeURIComponent(num)}&stname=${encodeURIComponent(street)}&spg=1`, '_blank');
+    } else {
+      alert('Select a county first.');
+    }
+  }
+
+  function launchAll() {
+    const county  = document.getElementById('rl-county-select').value;
+    const full    = document.getElementById('rl-fullAddr').value.trim();
+    const err     = document.getElementById('rl-err');
+    const success = document.getElementById('rl-success');
+    if (!full) { err.style.display = 'block'; success.style.display = 'none'; return; }
+
+    const { num, street } = parseAddr(full);
+    const fema    = `https://msc.fema.gov/portal/search?AddressQuery=${full.replace(/,/g, '%2C')}`;
+    const zillow  = `https://www.zillow.com/homes/${full.replace(/\s+/g,'-').replace(/,/g,'')}_rb/`;
+    const gmaps   = `https://www.google.com/maps/search/${encodeURIComponent(full)}`;
+    let urls = [];
+
+    if (county === 'cabarrus') {
+      const parcel = document.getElementById('rl-cabarrus-parcel').value.trim();
+      if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://location.cabarruscounty.us/mapcabarrus/?pin=${parcel}`,
+        `https://tax.cabarruscounty.us/AppraisalCard.aspx?Parcel=${parcel}`
+      ];
+    } else if (county === 'durham') {
+      const reid = document.getElementById('rl-reid').value.trim().replace(/\D/g, '');
+      if (!reid) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://maps.durhamnc.gov/?pid=${reid}`,
+        `https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`
+      ];
+    } else if (county === 'guilford') {
+      const reid = document.getElementById('rl-guilford-reid').value.trim().replace(/\D/g, '');
+      if (!reid) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://gisdv.guilfordcountync.gov/Guilford/`,
+        `https://lrcpwa.ncptscloud.com/guilford/parcel-detail/${reid}`
+      ];
+    } else if (county === 'iredell') {
+      const parcel = document.getElementById('rl-iredell-parcel').value.trim();
+      if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://iredellcountync.mapgeo.io/datasets/properties?panel=search&previewId=${parcel}&zoom=20`,
+        `https://taxweb.iredellcountync.gov/PublicAccess/AppraisalCard.aspx?parcel=${parcel}`
+      ];
+    } else if (county === 'mecklenburg') {
+      const pid = document.getElementById('rl-meck-pid').value.trim().replace(/\D/g, '');
+      if (!pid) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://polaris3g.mecklenburgcountync.gov/pid/${pid}`,
+        `https://polaris3g.mecklenburgcountync.gov/pdf/detail?pid=${pid}`
+      ];
+    } else if (county === 'wake') {
+      const parcel = document.getElementById('rl-parcel').value.trim().replace(/\D/g, '');
+      const pin    = document.getElementById('rl-pin').value.trim().replace(/\D/g, '');
+      if (!parcel || !pin) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ fema, zillow, gmaps,
+        `https://maps.raleighnc.gov/imaps/?pin=${pin}`,
+        `https://services.wake.gov/realestate/Account.asp?id=${parcel}&stype=addr&stnum=${num}&stname=${encodeURIComponent(street)}&locidList=&spg=1`
+      ];
+    } else {
+      alert('Select a county first.'); return;
+    }
+
+    err.style.display = 'none';
+    success.textContent = '✓ Opened 5 tabs — check your browser!';
+    urls.forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
+    success.style.display = 'block';
+  }
+
+  return { onCountyChange, openSearch, launchAll };
+})();
+
+
+/* ════════════════════════════
+   INCHES TO DECIMAL
+════════════════════════════ */
+const INCH = (() => {
+  function recalc() {
+    const feet   = parseFloat(document.getElementById('inch-feet').value) || 0;
+    const inches = parseFloat(document.getElementById('inch-inches').value) || 0;
+    const exact  = feet + (inches / 12);
+    const rounded = Math.round(exact * 10) / 10;
+    document.getElementById('inch-result').textContent = exact > 0 ? rounded.toFixed(1) + ' ft' : '—';
+    document.getElementById('inch-exact').textContent  = exact > 0 ? exact.toFixed(4) + ' ft' : '—';
+  }
+
+  function reset() {
+    document.getElementById('inch-feet').value = '';
+    document.getElementById('inch-inches').value = '';
+    document.getElementById('inch-result').textContent = '—';
+    document.getElementById('inch-exact').textContent  = '—';
+  }
+
+  return { recalc, reset };
+})();
+</script>
+</body>
+</html>
