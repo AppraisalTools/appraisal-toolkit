@@ -422,7 +422,7 @@
     </div>
   </div>
 
-  <div style="max-width:560px;">
+  <div style="display:grid;grid-template-columns:560px 1fr;gap:24px;align-items:start;">
 
   <!-- LEFT COLUMN -->
   <div>
@@ -521,7 +521,52 @@
 
   </div><!-- end left column -->
 
-  </div><!-- end max-width -->
+  </div><!-- end grid wrapper -->
+
+  <!-- RIGHT COLUMN — FEMA Flood Lookup -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;margin-top:0;">
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:16px;">🌊 FEMA Flood Zone Lookup</div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">Full Address</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="flood-addr" placeholder="123 Test St, Testville, NC 21111"
+          style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:9px 12px;outline:none;"
+          onkeydown="if(event.key==='Enter') FLOOD.lookup()">
+        <button onclick="FLOOD.lookup()"
+          style="padding:9px 14px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;">
+          LOOK UP
+        </button>
+      </div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:5px;">Include city &amp; state for best results</div>
+    </div>
+
+    <div id="flood-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-height:18px;margin-bottom:12px;"></div>
+
+    <div id="flood-results" style="display:none;">
+      <hr class="divider" style="margin:0 0 16px;">
+      <div style="display:grid;gap:12px;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Flood Zone</div>
+          <div id="flood-zone" style="font-family:var(--mono);font-size:28px;font-weight:600;color:var(--accent);">—</div>
+          <div id="flood-zone-desc" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:3px;"></div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">FIRM Panel Number</div>
+          <div id="flood-panel" style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text);">—</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Map Effective Date</div>
+          <div id="flood-date" style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text);">—</div>
+        </div>
+      </div>
+      <button onclick="FLOOD.copyText()"
+        style="margin-top:14px;width:100%;padding:10px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.08em;">
+        ⌘ COPY FLOOD DATA
+      </button>
+      <div id="flood-copy-confirm" style="display:none;font-family:var(--mono);font-size:10px;color:var(--accent2);text-align:center;margin-top:6px;">✓ Copied!</div>
+    </div>
+  </div><!-- end right column -->
 
   <p class="footer-note" style="margin-top:24px;">Allow pop-ups from this page for tab launching to work &nbsp;·&nbsp; Select a county to begin</p>
 </div>
@@ -1338,10 +1383,26 @@ const RL = (() => {
     } else if (county === 'iredell') {
       const parcel = document.getElementById('rl-iredell-parcel').value.trim();
       if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
-      urls = [ fema, zillow, gmaps,
-        `https://iredellcountync.mapgeo.io/datasets/properties?panel=search&previewId=${parcel}&zoom=20`,
-        `https://taxweb.iredellcountync.gov/PublicAccess/AppraisalCard.aspx?parcel=${parcel}`
-      ];
+      err.style.display = 'none';
+      success.textContent = '⏳ Geocoding address for MapGeo…';
+      success.style.display = 'block';
+      (async () => {
+        let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?panel=search&previewId=${parcel}&zoom=20`;
+        try {
+          const geoRes  = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`);
+          const geoData = await geoRes.json();
+          const match   = geoData?.result?.addressMatches?.[0];
+          if (match) {
+            const { x: lng, y: lat } = match.coordinates;
+            gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=${lat}%2C${lng}&panel=search&previewId=${parcel}&zoom=20`;
+          }
+        } catch(e) { /* fall back to parcel-only URL */ }
+        [fema, zillow, gmaps, gisUrl,
+          `https://taxweb.iredellcountync.gov/PublicAccess/AppraisalCard.aspx?parcel=${parcel}`
+        ].forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
+        success.textContent = '✓ Opened 5 tabs — check your browser!';
+      })();
+      return;
     } else if (county === 'mecklenburg') {
       const pid = document.getElementById('rl-meck-pid').value.trim().replace(/\D/g, '');
       if (!pid) { err.style.display = 'block'; success.style.display = 'none'; return; }
@@ -1392,6 +1453,95 @@ const INCH = (() => {
   }
 
   return { recalc, reset };
+})();
+
+/* ════════════════════════════
+   FEMA FLOOD LOOKUP
+════════════════════════════ */
+const FLOOD = (() => {
+
+  const ZONE_DESCRIPTIONS = {
+    'A':   'Special Flood Hazard Area (1% annual chance)',
+    'AE':  'Special Flood Hazard Area — base flood elevations determined',
+    'AH':  'Special Flood Hazard Area — shallow flooding',
+    'AO':  'Special Flood Hazard Area — river/stream flood',
+    'AR':  'Formerly protected — flood control system being restored',
+    'A99': 'Protected by federal flood control system under construction',
+    'V':   'Coastal Special Flood Hazard Area',
+    'VE':  'Coastal Special Flood Hazard Area — base flood elevations determined',
+    'X':   'Minimal flood hazard (outside 500-year floodplain)',
+    'D':   'Possible but undetermined flood hazard',
+  };
+
+  async function lookup() {
+    const addr    = document.getElementById('flood-addr').value.trim();
+    const status  = document.getElementById('flood-status');
+    const results = document.getElementById('flood-results');
+    if (!addr) { status.textContent = '⚠ Enter an address first.'; return; }
+
+    status.style.color = 'var(--warn)';
+    status.textContent = '⏳ Geocoding address…';
+    results.style.display = 'none';
+
+    try {
+      // Step 1: Census geocoder
+      const geoRes  = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`);
+      const geoData = await geoRes.json();
+      const match   = geoData?.result?.addressMatches?.[0];
+      if (!match) {
+        status.style.color = 'var(--danger)';
+        status.textContent = '✗ Address not found — try adding city & state.';
+        return;
+      }
+      const { x: lng, y: lat } = match.coordinates;
+      status.textContent = `⏳ Querying FEMA flood data…`;
+
+      // Step 2: FEMA NFHL Layer 28 — flood zones
+      const zoneRes  = await fetch(`https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`);
+      const zoneData = await zoneRes.json();
+      const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
+      const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
+
+      // Step 3: FEMA NFHL Layer 3 — FIRM panels
+      const panelRes  = await fetch(`https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE&returnGeometry=false&f=json`);
+      const panelData = await panelRes.json();
+      const panel     = panelData?.features?.[0]?.attributes?.FIRM_PAN?.trim() || 'N/A';
+      const rawDate   = panelData?.features?.[0]?.attributes?.EFF_DATE;
+      const effDate   = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : 'N/A';
+
+      // Render
+      const zoneEl = document.getElementById('flood-zone');
+      zoneEl.textContent  = zone;
+      zoneEl.style.color  = zone === 'X' ? 'var(--accent2)' : (zone.startsWith('A') || zone.startsWith('V')) ? 'var(--danger)' : 'var(--accent)';
+      document.getElementById('flood-zone-desc').textContent = subtype || ZONE_DESCRIPTIONS[zone] || '';
+      document.getElementById('flood-panel').textContent     = panel;
+      document.getElementById('flood-date').textContent      = effDate;
+
+      status.style.color = 'var(--accent2)';
+      status.textContent = `✓ ${match.matchedAddress}`;
+      results.style.display = 'block';
+      document.getElementById('flood-copy-confirm').style.display = 'none';
+
+    } catch(err) {
+      status.style.color = 'var(--danger)';
+      status.textContent = `✗ Lookup failed: ${err.message}`;
+    }
+  }
+
+  function copyText() {
+    const zone  = document.getElementById('flood-zone').textContent;
+    const desc  = document.getElementById('flood-zone-desc').textContent;
+    const panel = document.getElementById('flood-panel').textContent;
+    const date  = document.getElementById('flood-date').textContent;
+    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFIRM PANEL: ${panel}\nMAP EFFECTIVE DATE: ${date}`;
+    navigator.clipboard.writeText(text).then(() => {
+      const c = document.getElementById('flood-copy-confirm');
+      c.style.display = 'block';
+      setTimeout(() => c.style.display = 'none', 2000);
+    });
+  }
+
+  return { lookup, copyText };
 })();
 </script>
 </body>
