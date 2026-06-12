@@ -1389,7 +1389,7 @@ const RL = (() => {
       (async () => {
         let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?panel=search&previewId=${parcel}&zoom=20`;
         try {
-          const geoRes  = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`);
+          const geoRes  = await fetch(`https://corsproxy.io/?https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`);
           const geoData = await geoRes.json();
           const match   = geoData?.result?.addressMatches?.[0];
           if (match) {
@@ -1485,7 +1485,7 @@ const FLOOD = (() => {
 
     try {
       // Step 1: Census geocoder
-      const geoRes  = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`);
+      const geoRes  = await fetch(`https://corsproxy.io/?https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`);
       const geoData = await geoRes.json();
       const match   = geoData?.result?.addressMatches?.[0];
       if (!match) {
