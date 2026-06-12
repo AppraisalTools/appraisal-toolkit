@@ -525,10 +525,7 @@
   <div style="max-width:560px;margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">🌊 FEMA Flood Zone Lookup</div>
-      <button onclick="FLOOD.lookup()"
-        style="padding:7px 14px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;">
-        LOOK UP
-      </button>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Auto-runs on launch</div>
     </div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results</div>
 
@@ -1269,7 +1266,7 @@ const RL = (() => {
       setTimeout(() => window.open('https://gisdv.guilfordcountync.gov/Guilford/', '_blank'), 150);
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
-      setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281', '_blank'), 150);
+      setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20', '_blank'), 150);
     } else if (county === 'mecklenburg') {
       window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
       setTimeout(() => window.open('https://polaris3g.mecklenburgcountync.gov/', '_blank'), 150);
@@ -1380,7 +1377,7 @@ const RL = (() => {
       success.textContent = '⏳ Geocoding address for MapGeo…';
       success.style.display = 'block';
       (async () => {
-        let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281`;
+        let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20`;
         try {
           const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`;
           const geoRes  = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(censusUrl)}`);
@@ -1395,6 +1392,7 @@ const RL = (() => {
           `https://taxweb.iredellcountync.gov/PublicAccess/AppraisalCard.aspx?parcel=${parcel}`
         ].forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
         success.textContent = '✓ Opened 4 tabs — check your browser!';
+        FLOOD.lookup();
       })();
       return;
     } else if (county === 'mecklenburg') {
@@ -1420,6 +1418,7 @@ const RL = (() => {
     success.textContent = '✓ Opened 4 tabs — check your browser!';
     urls.forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
     success.style.display = 'block';
+    FLOOD.lookup(); // auto-run flood lookup on launch
   }
 
   return { onCountyChange, openSearch, launchAll };
