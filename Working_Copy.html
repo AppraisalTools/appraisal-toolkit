@@ -1380,7 +1380,9 @@ const RL = (() => {
         let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20`;
         try {
           const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`;
-          const geoRes  = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(censusUrl)}`);
+          let geoRes;
+          try { geoRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(censusUrl)}`); }
+          catch(e) { geoRes = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(censusUrl)}`); }
           const geoData = await geoRes.json();
           const match   = geoData?.result?.addressMatches?.[0];
           if (match) {
@@ -1476,10 +1478,25 @@ const FLOOD = (() => {
     status.textContent = '⏳ Geocoding address…';
     results.style.display = 'none';
 
+    // Try two proxies in sequence, return first that works
+    async function proxyFetch(url) {
+      const proxies = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+      ];
+      for (const proxy of proxies) {
+        try {
+          const res = await fetch(proxy);
+          if (res.ok) return res;
+        } catch(e) { /* try next */ }
+      }
+      throw new Error('All proxies failed');
+    }
+
     try {
       // Step 1: Census geocoder
       const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`;
-      const geoRes  = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(censusUrl)}`);
+      const geoRes  = await proxyFetch(censusUrl);
       const geoData = await geoRes.json();
       const match   = geoData?.result?.addressMatches?.[0];
       if (!match) {
@@ -1491,14 +1508,15 @@ const FLOOD = (() => {
       status.textContent = `⏳ Querying FEMA flood data…`;
 
       // Step 2: FEMA NFHL Layer 28 — flood zones
-      const femaZoneUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
-      const zoneRes  = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(femaZoneUrl)}`);
+      const femaZoneUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
+      const zoneRes  = await proxyFetch(femaZoneUrl);
       const zoneData = await zoneRes.json();
       const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
       const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
 
-      const femaPanelUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE&returnGeometry=false&f=json`;
-      const panelRes  = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(femaPanelUrl)}`);
+      // Step 3: FEMA NFHL Layer 3 — FIRM panels
+      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE&returnGeometry=false&f=json`;
+      const panelRes  = await proxyFetch(femaPanelUrl);
       const panelData = await panelRes.json();
       const panel     = panelData?.features?.[0]?.attributes?.FIRM_PAN?.trim() || 'N/A';
       const rawDate   = panelData?.features?.[0]?.attributes?.EFF_DATE;
