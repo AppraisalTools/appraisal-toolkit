@@ -415,6 +415,7 @@
         <option value="cabarrus">Cabarrus County</option>
         <option value="durham">Durham County</option>
         <option value="guilford">Guilford County</option>
+        <option value="harnett">Harnett County</option>
         <option value="iredell">Iredell County</option>
         <option value="mecklenburg">Mecklenburg County</option>
         <option value="wake">Wake County</option>
@@ -436,7 +437,7 @@
     <div id="rl-addr-section" style="display:none;">
       <div style="margin-bottom:20px;">
         <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Subject Address</div>
-        <input type="text" id="rl-fullAddr" placeholder="123 Test St, Testville, NC 21111"
+        <input type="text" id="rl-fullAddr" placeholder="114 Polo Dr, Salisbury, NC 28144"
           style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;margin-bottom:10px;"
           onkeydown="if(event.key==='Enter') RL.openSearch()">
         <button class="btn" id="rl-search-btn" onclick="RL.openSearch()" style="border-color:var(--accent);color:var(--accent);">🔍 Search Public Records</button>
@@ -472,10 +473,24 @@
         </div>
       </div>
 
+      <!-- HARNETT fields -->
+      <div id="rl-fields-harnett" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — GIS <span style="color:var(--text-dim);font-size:9px;">(XXXX-XX-XXXX.000)</span></div>
+          <input type="text" id="rl-harnett-pin" placeholder="XXXX-XX-XXXX.000"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PID — Property Records <span style="color:var(--text-dim);font-size:9px;">(with or without spaces)</span></div>
+          <input type="text" id="rl-harnett-pid" placeholder="XXXXXX XXXX XX or XXXXXXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
       <!-- IREDELL fields -->
       <div id="rl-fields-iredell" style="display:none;">
         <div style="margin-bottom:24px;">
-          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(13-digit incl. decimal)</span></div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(XXXXXXXXXX.XXX)</span></div>
           <input type="text" id="rl-iredell-parcel" placeholder="XXXXXXXXXX.XXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
@@ -521,16 +536,14 @@
 
   </div><!-- end left column -->
 
-  <!-- FEMA Flood Lookup — below launcher, same width -->
+  <!-- FEMA Flood Lookup -->
   <div style="max-width:560px;margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">🌊 FEMA Flood Zone Lookup</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Auto-runs on launch</div>
     </div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results</div>
-
     <div id="flood-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-height:18px;margin-bottom:8px;"></div>
-
     <div id="flood-results" style="display:none;">
       <hr class="divider" style="margin:0 0 16px;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
@@ -556,7 +569,7 @@
     </div>
   </div><!-- end FEMA -->
 
-  </div><!-- end max-width wrapper -->
+  </div><!-- end max-width -->
 
   <p class="footer-note" style="margin-top:24px;">Allow pop-ups from this page for tab launching to work &nbsp;·&nbsp; Select a county to begin</p>
 </div>
@@ -812,6 +825,8 @@
 <iframe src="https://property.spatialest.com/nc/mecklenburg/#/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://taxweb.iredellcountync.gov/PublicAccess/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://cama.harnett.org/ITSPublicHT/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 
 <div class="panel" id="panel-boundaries">
@@ -1239,6 +1254,7 @@ const RL = (() => {
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
     guilford:    { name: 'Guilford County',    searchHint: 'Opens Guilford County records — copy the REID into the field below' },
+    harnett:     { name: 'Harnett County',     searchHint: 'Opens Harnett County records — copy the PIN and PID into the fields below' },
     iredell:     { name: 'Iredell County',     searchHint: 'Opens Iredell County records — copy the parcel number into the field below' },
     mecklenburg: { name: 'Mecklenburg County', searchHint: 'Opens Mecklenburg County Spatialest — search by address, then copy the PID into the field below' },
     wake:        { name: 'Wake County',        searchHint: 'Opens Wake County records pre-filled — copy the REID and PIN into the fields below' },
@@ -1264,6 +1280,9 @@ const RL = (() => {
     } else if (county === 'guilford') {
       window.open('https://lrcpwa.ncptscloud.com/guilford/parcel-search', '_blank');
       setTimeout(() => window.open('https://gisdv.guilfordcountync.gov/Guilford/', '_blank'), 150);
+    } else if (county === 'harnett') {
+      window.open('https://cama.harnett.org/ITSPublicHT/', '_blank');
+      setTimeout(() => window.open('https://gis.harnett.org/gisviewer/', '_blank'), 150);
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
       setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20', '_blank'), 150);
@@ -1280,6 +1299,7 @@ const RL = (() => {
     document.getElementById('rl-fields-cabarrus').style.display    = 'none';
     document.getElementById('rl-fields-durham').style.display      = 'none';
     document.getElementById('rl-fields-guilford').style.display    = 'none';
+    document.getElementById('rl-fields-harnett').style.display     = 'none';
     document.getElementById('rl-fields-iredell').style.display     = 'none';
     document.getElementById('rl-fields-mecklenburg').style.display = 'none';
     document.getElementById('rl-fields-wake').style.display        = 'none';
@@ -1325,6 +1345,8 @@ const RL = (() => {
       window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'guilford') {
       window.open('https://lrcpwa.ncptscloud.com/guilford/parcel-search', '_blank');
+    } else if (county === 'harnett') {
+      window.open('https://cama.harnett.org/ITSPublicHT/', '_blank');
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
     } else if (county === 'mecklenburg') {
@@ -1336,6 +1358,14 @@ const RL = (() => {
     }
   }
 
+  // Encode Harnett PID: spaces → 4 spaces before seg2, 1 space before seg3
+  function encodeHarnettPID(pid) {
+    const parts = pid.trim().split(/\s+/);
+    if (parts.length === 3) return encodeURIComponent(`${parts[0]}    ${parts[1]} ${parts[2]}`);
+    if (parts.length === 2) return encodeURIComponent(`${parts[0]} ${parts[1]}`);
+    return encodeURIComponent(pid.trim());
+  }
+
   function launchAll() {
     const county  = document.getElementById('rl-county-select').value;
     const full    = document.getElementById('rl-fullAddr').value.trim();
@@ -1344,7 +1374,6 @@ const RL = (() => {
     if (!full) { err.style.display = 'block'; success.style.display = 'none'; return; }
 
     const { num, street } = parseAddr(full);
-    const fema    = `https://msc.fema.gov/portal/search?AddressQuery=${full.replace(/,/g, '%2C')}`;
     const zillow  = `https://www.zillow.com/homes/${full.replace(/\s+/g,'-').replace(/,/g,'')}_rb/`;
     const gmaps   = `https://www.google.com/maps/search/${encodeURIComponent(full)}`;
     let urls = [];
@@ -1370,6 +1399,14 @@ const RL = (() => {
         `https://gisdv.guilfordcountync.gov/Guilford/`,
         `https://lrcpwa.ncptscloud.com/guilford/parcel-detail/${reid}`
       ];
+    } else if (county === 'harnett') {
+      const pin = document.getElementById('rl-harnett-pin').value.trim();
+      const pid = document.getElementById('rl-harnett-pid').value.trim();
+      if (!pin || !pid) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://gis.harnett.org/gisviewer/?query=Parcels_5978_0%2CPIN%2C${encodeURIComponent(pin)}`,
+        `https://cama.harnett.org/ITSPublicHT/AppraisalCard.aspx?id=${encodeHarnettPID(pid)}`
+      ];
     } else if (county === 'iredell') {
       const parcel = document.getElementById('rl-iredell-parcel').value.trim();
       if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
@@ -1389,7 +1426,7 @@ const RL = (() => {
             const { x: lng, y: lat } = match.coordinates;
             gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=${lat}%2C${lng}&panel=search&zoom=20`;
           }
-        } catch(e) { /* fall back to parcel-only URL */ }
+        } catch(e) { /* fall back to default latlng */ }
         [zillow, gmaps, gisUrl,
           `https://taxweb.iredellcountync.gov/PublicAccess/AppraisalCard.aspx?parcel=${parcel}`
         ].forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
@@ -1420,7 +1457,7 @@ const RL = (() => {
     success.textContent = '✓ Opened 4 tabs — check your browser!';
     urls.forEach((url, i) => setTimeout(() => window.open(url, '_blank'), i * 150));
     success.style.display = 'block';
-    FLOOD.lookup(); // auto-run flood lookup on launch
+    FLOOD.lookup();
   }
 
   return { onCountyChange, openSearch, launchAll };
@@ -1468,6 +1505,20 @@ const FLOOD = (() => {
     'D':   'Possible but undetermined flood hazard',
   };
 
+  async function proxyFetch(url) {
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    ];
+    for (const proxy of proxies) {
+      try {
+        const res = await fetch(proxy);
+        if (res.ok) return res;
+      } catch(e) { /* try next */ }
+    }
+    throw new Error('All proxies failed');
+  }
+
   async function lookup() {
     const addr    = (document.getElementById('rl-fullAddr')?.value || '').trim();
     const status  = document.getElementById('flood-status');
@@ -1478,23 +1529,7 @@ const FLOOD = (() => {
     status.textContent = '⏳ Geocoding address…';
     results.style.display = 'none';
 
-    // Try two proxies in sequence, return first that works
-    async function proxyFetch(url) {
-      const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-      ];
-      for (const proxy of proxies) {
-        try {
-          const res = await fetch(proxy);
-          if (res.ok) return res;
-        } catch(e) { /* try next */ }
-      }
-      throw new Error('All proxies failed');
-    }
-
     try {
-      // Step 1: Census geocoder
       const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`;
       const geoRes  = await proxyFetch(censusUrl);
       const geoData = await geoRes.json();
@@ -1507,14 +1542,12 @@ const FLOOD = (() => {
       const { x: lng, y: lat } = match.coordinates;
       status.textContent = `⏳ Querying FEMA flood data…`;
 
-      // Step 2: FEMA NFHL Layer 28 — flood zones
-      const femaZoneUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
+      const femaZoneUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
       const zoneRes  = await proxyFetch(femaZoneUrl);
       const zoneData = await zoneRes.json();
       const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
       const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
 
-      // Step 3: FEMA NFHL Layer 3 — FIRM panels
       const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE&returnGeometry=false&f=json`;
       const panelRes  = await proxyFetch(femaPanelUrl);
       const panelData = await panelRes.json();
@@ -1522,10 +1555,9 @@ const FLOOD = (() => {
       const rawDate   = panelData?.features?.[0]?.attributes?.EFF_DATE;
       const effDate   = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' }) : 'N/A';
 
-      // Render
       const zoneEl = document.getElementById('flood-zone');
-      zoneEl.textContent  = zone;
-      zoneEl.style.color  = zone === 'X' ? 'var(--accent2)' : (zone.startsWith('A') || zone.startsWith('V')) ? 'var(--danger)' : 'var(--accent)';
+      zoneEl.textContent = zone;
+      zoneEl.style.color = zone === 'X' ? 'var(--accent2)' : (zone.startsWith('A') || zone.startsWith('V')) ? 'var(--danger)' : 'var(--accent)';
       document.getElementById('flood-zone-desc').textContent = subtype || ZONE_DESCRIPTIONS[zone] || '';
       document.getElementById('flood-panel').textContent     = panel;
       document.getElementById('flood-date').textContent      = effDate;
