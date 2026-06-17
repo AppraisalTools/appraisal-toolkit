@@ -418,7 +418,9 @@
         <option value="guilford">Guilford County</option>
         <option value="harnett">Harnett County</option>
         <option value="iredell">Iredell County</option>
+        <option value="johnston">Johnston County</option>
         <option value="mecklenburg">Mecklenburg County</option>
+        <option value="orange">Orange County</option>
         <option value="wake">Wake County</option>
       </select>
     </div>
@@ -506,11 +508,29 @@
         </div>
       </div>
 
+      <!-- JOHNSTON fields -->
+      <div id="rl-fields-johnston" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — Property Records <span style="color:var(--text-dim);font-size:9px;">(8-digit)</span></div>
+          <input type="text" id="rl-johnston-pin" placeholder="XXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
       <!-- MECKLENBURG fields -->
       <div id="rl-fields-mecklenburg" style="display:none;">
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PID — Polaris GIS &amp; Property Records <span style="color:var(--text-dim);font-size:9px;">(8-digit)</span></div>
           <input type="text" id="rl-meck-pid" placeholder="XXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- ORANGE fields -->
+      <div id="rl-fields-orange" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(10-digit)</span></div>
+          <input type="text" id="rl-orange-pin" placeholder="XXXXXXXXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -839,6 +859,10 @@
 <iframe src="https://cama.harnett.org/ITSPublicHT/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://gastonnc.devnetwedge.com/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://property.spatialest.com/nc/orange#/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://www.bttaxpayerportal.com/ITSPublicJO/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 
 <div class="panel" id="panel-boundaries">
@@ -1268,7 +1292,9 @@ const RL = (() => {
     gaston:      { name: 'Gaston County',      searchHint: 'Opens Gaston County records — copy the parcel number into the field below' },
     harnett:     { name: 'Harnett County',     searchHint: 'Opens Harnett County records — copy the PIN and PID into the fields below' },
     iredell:     { name: 'Iredell County',     searchHint: 'Opens Iredell County records — copy the parcel number into the field below' },
+    johnston:    { name: 'Johnston County',    searchHint: 'Opens Johnston County records — copy the PIN into the field below' },
     mecklenburg: { name: 'Mecklenburg County', searchHint: 'Opens Mecklenburg County Spatialest — search by address, then copy the PID into the field below' },
+    orange:      { name: 'Orange County',      searchHint: 'Opens Orange County records — copy the PIN into the field below' },
     wake:        { name: 'Wake County',        searchHint: 'Opens Wake County records pre-filled — copy the REID and PIN into the fields below' },
   };
 
@@ -1301,9 +1327,15 @@ const RL = (() => {
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
       setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20', '_blank'), 150);
+    } else if (county === 'johnston') {
+      window.open('https://www.bttaxpayerportal.com/ITSPublicJO/', '_blank');
+      setTimeout(() => window.open('https://mapclick8.johnstonnc.com/mapclick6/index.html/', '_blank'), 150);
     } else if (county === 'mecklenburg') {
       window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
       setTimeout(() => window.open('https://polaris3g.mecklenburgcountync.gov/', '_blank'), 150);
+    } else if (county === 'orange') {
+      window.open('https://property.spatialest.com/nc/orange#/', '_blank');
+      setTimeout(() => window.open('https://gis.orangecountync.gov/orangeNCGIS/default.htm', '_blank'), 150);
     } else if (county === 'wake') {
       window.open('https://services.wake.gov/realestate/', '_blank');
       setTimeout(() => window.open('https://maps.raleighnc.gov/imaps/', '_blank'), 150);
@@ -1317,7 +1349,9 @@ const RL = (() => {
     document.getElementById('rl-fields-guilford').style.display    = 'none';
     document.getElementById('rl-fields-harnett').style.display     = 'none';
     document.getElementById('rl-fields-iredell').style.display     = 'none';
+    document.getElementById('rl-fields-johnston').style.display    = 'none';
     document.getElementById('rl-fields-mecklenburg').style.display = 'none';
+    document.getElementById('rl-fields-orange').style.display      = 'none';
     document.getElementById('rl-fields-wake').style.display        = 'none';
     document.getElementById('rl-err').style.display           = 'none';
     document.getElementById('rl-success').style.display       = 'none';
@@ -1367,8 +1401,12 @@ const RL = (() => {
       window.open('https://cama.harnett.org/ITSPublicHT/', '_blank');
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
+    } else if (county === 'johnston') {
+      window.open('https://www.bttaxpayerportal.com/ITSPublicJO/', '_blank');
     } else if (county === 'mecklenburg') {
       window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
+    } else if (county === 'orange') {
+      window.open('https://property.spatialest.com/nc/orange#/', '_blank');
     } else if (county === 'wake') {
       window.open(`https://services.wake.gov/realestate/Account.asp?stype=addr&stnum=${encodeURIComponent(num)}&stname=${encodeURIComponent(street)}&spg=1`, '_blank');
     } else {
@@ -1459,12 +1497,26 @@ const RL = (() => {
         FLOOD.lookup();
       })();
       return;
+    } else if (county === 'johnston') {
+      const pin = document.getElementById('rl-johnston-pin').value.trim().replace(/\D/g, '');
+      if (!pin) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://mapclick8.johnstonnc.com/mapclick6/index.html/`,
+        `https://www.bttaxpayerportal.com/itspublicjo/AppraisalCard.aspx?prid=${pin}`
+      ];
     } else if (county === 'mecklenburg') {
       const pid = document.getElementById('rl-meck-pid').value.trim().replace(/\D/g, '');
       if (!pid) { err.style.display = 'block'; success.style.display = 'none'; return; }
       urls = [ zillow, gmaps,
         `https://polaris3g.mecklenburgcountync.gov/pid/${pid}`,
         `https://polaris3g.mecklenburgcountync.gov/pdf/detail?pid=${pid}`
+      ];
+    } else if (county === 'orange') {
+      const pin = document.getElementById('rl-orange-pin').value.trim().replace(/\D/g, '');
+      if (!pin) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://gis.orangecountync.gov/orangeNCGIS/default.htm?pin=${pin}`,
+        `https://property.spatialest.com/nc/orange#/property/${pin}`
       ];
     } else if (county === 'wake') {
       const parcel = document.getElementById('rl-parcel').value.trim().replace(/\D/g, '');
