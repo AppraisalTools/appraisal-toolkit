@@ -421,6 +421,7 @@
         <option value="johnston">Johnston County</option>
         <option value="mecklenburg">Mecklenburg County</option>
         <option value="orange">Orange County</option>
+        <option value="rowan">Rowan County</option>
         <option value="wake">Wake County</option>
       </select>
     </div>
@@ -531,6 +532,15 @@
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(10-digit)</span></div>
           <input type="text" id="rl-orange-pin" placeholder="XXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- ROWAN fields -->
+      <div id="rl-fields-rowan" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(XXX XXXXX or XXX XXX)</span></div>
+          <input type="text" id="rl-rowan-pin" placeholder="XXX XXXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -863,6 +873,8 @@
 <iframe src="https://property.spatialest.com/nc/orange#/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://www.bttaxpayerportal.com/ITSPublicJO/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://tax.rowancountync.gov/search/commonsearch.aspx?mode=realprop"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 
 <div class="panel" id="panel-boundaries">
@@ -1295,6 +1307,7 @@ const RL = (() => {
     johnston:    { name: 'Johnston County',    searchHint: 'Opens Johnston County records — copy the PIN into the field below' },
     mecklenburg: { name: 'Mecklenburg County', searchHint: 'Opens Mecklenburg County Spatialest — search by address, then copy the PID into the field below' },
     orange:      { name: 'Orange County',      searchHint: 'Opens Orange County records — copy the PIN into the field below' },
+    rowan:       { name: 'Rowan County',       searchHint: 'Opens Rowan County records — copy the PIN into the field below' },
     wake:        { name: 'Wake County',        searchHint: 'Opens Wake County records pre-filled — copy the REID and PIN into the fields below' },
   };
 
@@ -1336,6 +1349,9 @@ const RL = (() => {
     } else if (county === 'orange') {
       window.open('https://property.spatialest.com/nc/orange#/', '_blank');
       setTimeout(() => window.open('https://gis.orangecountync.gov/orangeNCGIS/default.htm', '_blank'), 150);
+    } else if (county === 'rowan') {
+      window.open('https://tax.rowancountync.gov/search/commonsearch.aspx?mode=realprop', '_blank');
+      setTimeout(() => window.open('https://gis.rowancountync.gov/gismaps/', '_blank'), 150);
     } else if (county === 'wake') {
       window.open('https://services.wake.gov/realestate/', '_blank');
       setTimeout(() => window.open('https://maps.raleighnc.gov/imaps/', '_blank'), 150);
@@ -1352,6 +1368,7 @@ const RL = (() => {
     document.getElementById('rl-fields-johnston').style.display    = 'none';
     document.getElementById('rl-fields-mecklenburg').style.display = 'none';
     document.getElementById('rl-fields-orange').style.display      = 'none';
+    document.getElementById('rl-fields-rowan').style.display       = 'none';
     document.getElementById('rl-fields-wake').style.display        = 'none';
     document.getElementById('rl-err').style.display           = 'none';
     document.getElementById('rl-success').style.display       = 'none';
@@ -1407,6 +1424,8 @@ const RL = (() => {
       window.open('https://property.spatialest.com/nc/mecklenburg/#/', '_blank');
     } else if (county === 'orange') {
       window.open('https://property.spatialest.com/nc/orange#/', '_blank');
+    } else if (county === 'rowan') {
+      window.open('https://tax.rowancountync.gov/search/commonsearch.aspx?mode=realprop', '_blank');
     } else if (county === 'wake') {
       window.open(`https://services.wake.gov/realestate/Account.asp?stype=addr&stnum=${encodeURIComponent(num)}&stname=${encodeURIComponent(street)}&spg=1`, '_blank');
     } else {
@@ -1517,6 +1536,13 @@ const RL = (() => {
       urls = [ zillow, gmaps,
         `https://gis.orangecountync.gov/orangeNCGIS/default.htm?pin=${pin}`,
         `https://property.spatialest.com/nc/orange#/property/${pin}`
+      ];
+    } else if (county === 'rowan') {
+      const pin = document.getElementById('rl-rowan-pin').value.trim();
+      if (!pin) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://gis.rowancountync.gov/gismaps/`,
+        `https://tax.rowancountync.gov/Datalets/Datalet.aspx?UseSearch=no&pin=${pin.replace(/\s+/g, '%20')}`
       ];
     } else if (county === 'wake') {
       const parcel = document.getElementById('rl-parcel').value.trim().replace(/\D/g, '');
