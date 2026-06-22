@@ -414,6 +414,7 @@
         <option value="">— Select County —</option>
         <option value="cabarrus">Cabarrus County</option>
         <option value="durham">Durham County</option>
+        <option value="forsyth">Forsyth County</option>
         <option value="gaston">Gaston County</option>
         <option value="guilford">Guilford County</option>
         <option value="harnett">Harnett County</option>
@@ -466,6 +467,20 @@
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(6-digit)</span></div>
           <input type="text" id="rl-reid" placeholder="XXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- FORSYTH fields -->
+      <div id="rl-fields-forsyth" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID — Property Records <span style="color:var(--text-dim);font-size:9px;">(13-digit)</span></div>
+          <input type="text" id="rl-forsyth-reid" placeholder="XXXXXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PIN — GIS <span style="color:var(--text-dim);font-size:9px;">(XXXX-XX-XXXX)</span></div>
+          <input type="text" id="rl-forsyth-pin" placeholder="XXXX-XX-XXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -617,6 +632,7 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
     <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">📋 Changelog</div>
     <div style="max-height:90px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6;">
+      <div>• Added Forsyth County</div>
       <div>• Added Rowan County</div>
       <div>• Added Johnston County</div>
       <div>• Added Orange County</div>
@@ -880,6 +896,8 @@
 
 <!-- Hidden session warmers -->
 <iframe src="https://lrcpwa.ncptscloud.com/guilford/parcel-search"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://lrcpwa.ncptscloud.com/forsyth/parcel-search"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://tax.cabarruscounty.us/BasicSearch.aspx"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
@@ -1322,6 +1340,7 @@ const RL = (() => {
   const COUNTIES = {
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
+    forsyth:     { name: 'Forsyth County',     searchHint: 'Opens Forsyth County records — copy the REID and PIN into the fields below' },
     gaston:      { name: 'Gaston County',      searchHint: 'Opens Gaston County records — copy the parcel number into the field below' },
     harnett:     { name: 'Harnett County',     searchHint: 'Opens Harnett County records — copy the PIN and PID into the fields below' },
     iredell:     { name: 'Iredell County',     searchHint: 'Opens Iredell County records — copy the parcel number into the field below' },
@@ -1349,6 +1368,9 @@ const RL = (() => {
     } else if (county === 'durham') {
       window.open('https://taxcama.dconc.gov/camapwa/SearchProperty.aspx', '_blank');
       setTimeout(() => window.open('https://maps.durhamnc.gov/', '_blank'), 150);
+    } else if (county === 'forsyth') {
+      window.open('https://lrcpwa.ncptscloud.com/forsyth/parcel-search', '_blank');
+      setTimeout(() => window.open('https://mapf.maps.arcgis.com/apps/webappviewer/index.html?id=53620a0b6458437aa82bd5e91d8cc47b', '_blank'), 150);
     } else if (county === 'gaston') {
       window.open('https://gastonnc.devnetwedge.com/', '_blank');
       setTimeout(() => window.open('https://gis.gastoncountync.gov/Map/Index', '_blank'), 150);
@@ -1382,6 +1404,7 @@ const RL = (() => {
   function onCountyChange(value) {
     document.getElementById('rl-fields-cabarrus').style.display    = 'none';
     document.getElementById('rl-fields-durham').style.display      = 'none';
+    document.getElementById('rl-fields-forsyth').style.display     = 'none';
     document.getElementById('rl-fields-gaston').style.display      = 'none';
     document.getElementById('rl-fields-guilford').style.display    = 'none';
     document.getElementById('rl-fields-harnett').style.display     = 'none';
@@ -1431,6 +1454,8 @@ const RL = (() => {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
     } else if (county === 'durham') {
       window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
+    } else if (county === 'forsyth') {
+      window.open('https://lrcpwa.ncptscloud.com/forsyth/parcel-search', '_blank');
     } else if (county === 'gaston') {
       window.open('https://gastonnc.devnetwedge.com/', '_blank');
     } else if (county === 'guilford') {
@@ -1487,6 +1512,13 @@ const RL = (() => {
       urls = [ zillow, gmaps,
         `https://maps.durhamnc.gov/?pid=${reid}`,
         `https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`
+      ];
+    } else if (county === 'forsyth') {
+      const pin = document.getElementById('rl-forsyth-pin').value.trim();
+      if (!pin) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://mapf.maps.arcgis.com/apps/webappviewer/index.html?id=53620a0b6458437aa82bd5e91d8cc47b&find=${encodeURIComponent(pin)}`,
+        `https://lrcpwa.ncptscloud.com/forsyth/parcel-search`
       ];
     } else if (county === 'gaston') {
       const parcel = document.getElementById('rl-gaston-parcel').value.trim();
