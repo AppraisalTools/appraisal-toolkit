@@ -1797,11 +1797,33 @@ const FLOOD = (() => {
       const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
       const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
 
-      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE&returnGeometry=false&f=json`;
+      // Get the authoritative DFIRM_ID for this point (Political Jurisdictions layer).
+      // This tells us which countywide/community dataset is CURRENT for this location,
+      // since the panel layer below can contain leftover/superseded polygons from
+      // datasets that have since been replaced (e.g. a town's old standalone DFIRM
+      // still overlapping the same area as the current countywide DFIRM).
+      const jurisdictionUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=DFIRM_ID&returnGeometry=false&f=json`;
+      const jurisRes        = await proxyFetch(jurisdictionUrl);
+      const jurisData       = await jurisRes.json();
+      const currentDfirmId  = jurisData?.features?.[0]?.attributes?.DFIRM_ID?.trim() || null;
+
+      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE%2CDFIRM_ID&returnGeometry=false&f=json`;
       const panelRes  = await proxyFetch(femaPanelUrl);
       const panelData = await panelRes.json();
-      const panel     = panelData?.features?.[0]?.attributes?.FIRM_PAN?.trim() || 'N/A';
-      const rawDate   = panelData?.features?.[0]?.attributes?.EFF_DATE;
+
+      // Prefer the panel feature whose DFIRM_ID matches the authoritative jurisdiction
+      // dataset; fall back to the first feature if no match is found (e.g. jurisdiction
+      // query failed or returned nothing).
+      let panelFeature = null;
+      if (currentDfirmId) {
+        panelFeature = panelData?.features?.find(
+          f => f.attributes?.DFIRM_ID?.trim() === currentDfirmId
+        );
+      }
+      if (!panelFeature) panelFeature = panelData?.features?.[0];
+
+      const panel     = panelFeature?.attributes?.FIRM_PAN?.trim() || 'N/A';
+      const rawDate   = panelFeature?.attributes?.EFF_DATE;
       const effDate   = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' }) : 'N/A';
 
       const zoneEl = document.getElementById('flood-zone');
@@ -1812,7 +1834,9 @@ const FLOOD = (() => {
       document.getElementById('flood-date').textContent      = effDate;
 
       status.style.color = 'var(--accent2)';
-      status.textContent = `✓ ${match.matchedAddress}`;
+      const matchedDfirm = panelFeature?.attributes?.DFIRM_ID?.trim();
+      const dfirmNote = matchedDfirm ? ` (DFIRM ${matchedDfirm})` : '';
+      status.textContent = `✓ ${match.matchedAddress}${dfirmNote}`;
       results.style.display = 'block';
       document.getElementById('flood-copy-confirm').style.display = 'none';
 
