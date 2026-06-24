@@ -412,6 +412,7 @@
       <select id="rl-county-select" class="styled-select" onchange="RL.onCountyChange(this.value)"
         style="font-size:13px;min-width:155px;">
         <option value="">— Select County —</option>
+        <option value="alamance">Alamance County</option>
         <option value="cabarrus">Cabarrus County</option>
         <option value="chatham">Chatham County</option>
         <option value="durham">Durham County</option>
@@ -453,6 +454,15 @@
       </div>
 
       <hr class="divider">
+
+      <!-- ALAMANCE fields -->
+      <div id="rl-fields-alamance" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records <span style="color:var(--text-dim);font-size:9px;">(6-digit)</span></div>
+          <input type="text" id="rl-alamance-parcel" placeholder="XXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
 
       <!-- CABARRUS fields -->
       <div id="rl-fields-cabarrus" style="display:none;">
@@ -642,6 +652,7 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
     <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">📋 Changelog</div>
     <div style="max-height:90px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6;">
+      <div>• Added Alamance County</div>
       <div>• Added Chatham County</div>
       <div>• Added Forsyth County</div>
       <div>• Added Rowan County</div>
@@ -661,6 +672,7 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:14px;">
     <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">⚠ GIS Opens Blank</div>
     <div style="max-height:90px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6;">
+      <div>• Alamance County</div>
       <div>• Chatham County</div>
       <div>• Johnston County</div>
       <div>• Rowan County</div>
@@ -926,6 +938,8 @@
 <iframe src="https://tax.cabarruscounty.us/BasicSearch.aspx"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://property.spatialest.com/nc/mecklenburg/#/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://property.spatialest.com/nc/alamance#/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://taxweb.iredellcountync.gov/PublicAccess/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
@@ -1362,6 +1376,7 @@ TAX.init();
 const RL = (() => {
 
   const COUNTIES = {
+    alamance:    { name: 'Alamance County',    searchHint: 'Opens Alamance County Spatialest — search by address, then copy the parcel into the field below' },
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
     chatham:     { name: 'Chatham County',     searchHint: 'Opens Chatham County records — copy the parcel number into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
@@ -1387,7 +1402,10 @@ const RL = (() => {
 
   function openPropertySites() {
     const county = document.getElementById('rl-county-select').value;
-    if (county === 'cabarrus') {
+    if (county === 'alamance') {
+      window.open('https://property.spatialest.com/nc/alamance#/', '_blank');
+      setTimeout(() => window.open('https://apps.alamance-nc.com/CountyGISMap/', '_blank'), 150);
+    } else if (county === 'cabarrus') {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
       setTimeout(() => window.open('https://location.cabarruscounty.us/mapcabarrus/', '_blank'), 150);
     } else if (county === 'chatham') {
@@ -1430,6 +1448,7 @@ const RL = (() => {
   }
 
   function onCountyChange(value) {
+    document.getElementById('rl-fields-alamance').style.display     = 'none';
     document.getElementById('rl-fields-cabarrus').style.display    = 'none';
     document.getElementById('rl-fields-chatham').style.display     = 'none';
     document.getElementById('rl-fields-durham').style.display      = 'none';
@@ -1479,7 +1498,9 @@ const RL = (() => {
     const full   = document.getElementById('rl-fullAddr').value.trim();
     if (!full) { alert('Enter the subject address first.'); return; }
     const { num, street } = parseAddr(full);
-    if (county === 'cabarrus') {
+    if (county === 'alamance') {
+      window.open('https://property.spatialest.com/nc/alamance#/', '_blank');
+    } else if (county === 'cabarrus') {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
@@ -1530,7 +1551,14 @@ const RL = (() => {
     const gmaps   = `https://www.google.com/maps/search/${encodeURIComponent(full)}`;
     let urls = [];
 
-    if (county === 'cabarrus') {
+    if (county === 'alamance') {
+      const parcel = document.getElementById('rl-alamance-parcel').value.trim();
+      if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://apps.alamance-nc.com/CountyGISMap/`,
+        `https://property.spatialest.com/nc/alamance/#/property/${parcel}`
+      ];
+    } else if (county === 'cabarrus') {
       const parcel = document.getElementById('rl-cabarrus-parcel').value.trim();
       if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
       urls = [ zillow, gmaps,
