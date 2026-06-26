@@ -653,13 +653,25 @@
           <div id="flood-zone-desc" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:3px;"></div>
         </div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">FEMA Map Number</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">FEMA Map Number</div>
+            <button onclick="FLOOD.copyOne('flood-panel', this)" title="Copy"
+              style="background:transparent;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;font-size:11px;line-height:1;">⧉</button>
+          </div>
           <div id="flood-panel" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-top:8px;margin-bottom:4px;">Alt FEMA Map Number</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Alt FEMA Map Number</div>
+            <button onclick="FLOOD.copyOne('corelogic-final', this)" title="Copy"
+              style="background:transparent;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;font-size:11px;line-height:1;">⧉</button>
+          </div>
           <div id="corelogic-final" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
         </div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Effective Date</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Effective Date</div>
+            <button onclick="FLOOD.copyOne('flood-date', this)" title="Copy"
+              style="background:transparent;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;font-size:11px;line-height:1;">⧉</button>
+          </div>
           <div id="flood-date" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
         </div>
       </div>
@@ -673,11 +685,6 @@
         <button onclick="FLOOD.convertCoreLogic()">⇄ CONVERT</button>
       </div>
       <div id="corelogic-error" style="display:none;font-family:var(--mono);font-size:10px;color:var(--danger);margin-top:8px;"></div>
-      <button onclick="FLOOD.copyText()"
-        style="margin-top:12px;width:100%;padding:9px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.08em;">
-        ⌘ COPY FLOOD DATA
-      </button>
-      <div id="flood-copy-confirm" style="display:none;font-family:var(--mono);font-size:10px;color:var(--accent2);text-align:center;margin-top:6px;">✓ Copied!</div>
     </div>
   </div><!-- end FEMA -->
 
@@ -1954,7 +1961,6 @@ const FLOOD = (() => {
       const dfirmNote = matchedDfirm ? ` (DFIRM ${matchedDfirm})` : '';
       status.textContent = `✓ ${match.matchedAddress}${dfirmNote}`;
       results.style.display = 'block';
-      document.getElementById('flood-copy-confirm').style.display = 'none';
 
     } catch(err) {
       status.style.color = 'var(--danger)';
@@ -1962,18 +1968,15 @@ const FLOOD = (() => {
     }
   }
 
-  function copyText() {
-    const zone  = document.getElementById('flood-zone').textContent;
-    const desc  = document.getElementById('flood-zone-desc').textContent;
-    const panel = document.getElementById('flood-panel').textContent;
-    const date  = document.getElementById('flood-date').textContent;
-    const coreLogic = document.getElementById('corelogic-final')?.textContent;
-    const coreLogicLine = (coreLogic && coreLogic !== '—') ? `\nALT FEMA MAP NUMBER: ${coreLogic}` : '';
-    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFEMA MAP NUMBER: ${panel}\nMAP EFFECTIVE DATE: ${date}${coreLogicLine}`;
+  function copyOne(elementId, btn) {
+    const text = document.getElementById(elementId)?.textContent?.trim();
+    if (!text || text === '—') return;
     navigator.clipboard.writeText(text).then(() => {
-      const c = document.getElementById('flood-copy-confirm');
-      c.style.display = 'block';
-      setTimeout(() => c.style.display = 'none', 2000);
+      if (!btn) return;
+      const original = btn.textContent;
+      btn.textContent = '✓';
+      btn.style.color = 'var(--accent2)';
+      setTimeout(() => { btn.textContent = original; btn.style.color = 'var(--text-dim)'; }, 1200);
     });
   }
 
@@ -2012,7 +2015,7 @@ const FLOOD = (() => {
     document.getElementById('corelogic-final').textContent = finalNumber;
   }
 
-  return { lookup, copyText, convertCoreLogic, proxyFetch };
+  return { lookup, copyOne, convertCoreLogic, proxyFetch };
 })();
 </script>
 </body>
