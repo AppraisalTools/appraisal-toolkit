@@ -1689,9 +1689,7 @@ const RL = (() => {
         let gisUrl = `https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20`;
         try {
           const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(full)}&benchmark=2020&format=json`;
-          let geoRes;
-          try { geoRes = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(censusUrl)}`); }
-          catch(e) { geoRes = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(censusUrl)}`); }
+          const geoRes  = await FLOOD.proxyFetch(censusUrl);
           const geoData = await geoRes.json();
           const match   = geoData?.result?.addressMatches?.[0];
           if (match) {
@@ -1842,17 +1840,34 @@ const FLOOD = (() => {
   populateCountySelect();
 
   async function proxyFetch(url) {
-    const proxies = [
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-      `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    ];
-    for (const proxy of proxies) {
-      try {
-        const res = await fetch(proxy);
-        if (res.ok) return res;
-      } catch(e) { /* try next */ }
+    const TIMEOUT_MS = 8000;
+
+    function withTimeout(promise) {
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)
+      );
+      return Promise.race([promise, timeout]);
     }
-    throw new Error('All proxies failed');
+
+    const attempts = [
+      withTimeout(fetch(url)),
+      withTimeout(fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`)),
+      withTimeout(fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`)),
+    ].map(p => p.then(res => {
+      if (!res.ok) throw new Error('bad response');
+      return res;
+    }));
+
+    // Race all three; if all fail, report the failure once everything has settled.
+    return new Promise((resolve, reject) => {
+      let remaining = attempts.length;
+      attempts.forEach(p => {
+        p.then(resolve).catch(() => {
+          remaining--;
+          if (remaining === 0) reject(new Error('All fetch attempts failed'));
+        });
+      });
+    });
   }
 
   async function lookup() {
@@ -1879,8 +1894,23 @@ const FLOOD = (() => {
       status.textContent = `⏳ Querying FEMA flood data…`;
 
       const femaZoneUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
-      const zoneRes  = await proxyFetch(femaZoneUrl);
-      const zoneData = await zoneRes.json();
+      const jurisdictionUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=DFIRM_ID&returnGeometry=false&f=json`;
+      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE%2CDFIRM_ID&returnGeometry=false&f=json`;
+
+      // These three queries are independent (same point, different layers) —
+      // fire them all at once instead of waiting on each other in sequence.
+      const [zoneRes, jurisRes, panelRes] = await Promise.all([
+        proxyFetch(femaZoneUrl),
+        proxyFetch(jurisdictionUrl),
+        proxyFetch(femaPanelUrl),
+      ]);
+
+      const [zoneData, jurisData, panelData] = await Promise.all([
+        zoneRes.json(),
+        jurisRes.json(),
+        panelRes.json(),
+      ]);
+
       const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
       const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
 
@@ -1889,14 +1919,7 @@ const FLOOD = (() => {
       // since the panel layer below can contain leftover/superseded polygons from
       // datasets that have since been replaced (e.g. a town's old standalone DFIRM
       // still overlapping the same area as the current countywide DFIRM).
-      const jurisdictionUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=DFIRM_ID&returnGeometry=false&f=json`;
-      const jurisRes        = await proxyFetch(jurisdictionUrl);
-      const jurisData       = await jurisRes.json();
       const currentDfirmId  = jurisData?.features?.[0]?.attributes?.DFIRM_ID?.trim() || null;
-
-      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE%2CDFIRM_ID&returnGeometry=false&f=json`;
-      const panelRes  = await proxyFetch(femaPanelUrl);
-      const panelData = await panelRes.json();
 
       // Prefer the panel feature whose DFIRM_ID matches the authoritative jurisdiction
       // dataset; fall back to the first feature if no match is found (e.g. jurisdiction
@@ -2008,7 +2031,7 @@ const FLOOD = (() => {
     resultBox.style.display = 'block';
   }
 
-  return { lookup, copyText, convertCoreLogic };
+  return { lookup, copyText, convertCoreLogic, proxyFetch };
 })();
 </script>
 </body>
