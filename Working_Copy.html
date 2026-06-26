@@ -448,7 +448,7 @@
     <div id="rl-addr-section" style="display:none;">
       <div style="margin-bottom:20px;">
         <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Subject Address</div>
-        <input type="text" id="rl-fullAddr" placeholder="114 Polo Dr, Salisbury, NC 28144"
+        <input type="text" id="rl-fullAddr" placeholder="123 Test St, Testville, NC 28000"
           style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;margin-bottom:10px;"
           onkeydown="if(event.key==='Enter') RL.openSearch()">
         <button class="btn" id="rl-search-btn" onclick="RL.openSearch()" style="border-color:var(--accent);color:var(--accent);">🔍 Search Public Records</button>
@@ -1410,7 +1410,7 @@ const RL = (() => {
   const STREET_SUFFIXES = /\b(ave|avenue|blvd|boulevard|cir|circle|ct|court|dr|drive|expy|expressway|fwy|freeway|hwy|highway|ln|lane|pkwy|parkway|pl|place|rd|road|sq|square|st|street|ter|terrace|trl|trail|way|wy)\b\.?$/i;
   function stripSuffix(n) { return n.replace(STREET_SUFFIXES, '').trim(); }
 
-  // Parse "114 Polo Dr, Salisbury, NC 28144" → { num, street, full }
+  // Parse "123 Test St, Testville, NC 28000" → { num, street, full }
   function parseAddr(full) {
     const m = full.trim().match(/^(\d+)\s+(.+?)(?:,|$)/);
     return { full: full.trim(), num: m ? m[1] : '', street: m ? stripSuffix(m[2].trim()) : full.trim() };
