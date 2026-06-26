@@ -637,9 +637,12 @@
   <div style="max-width:560px;margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">🌊 FEMA Flood Zone Lookup</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Auto-runs on launch</div>
+      <button onclick="FLOOD.lookup()"
+        style="padding:6px 12px;background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:10px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;">
+        🔍 LOOK UP
+      </button>
     </div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results. Also auto-runs on Launch All.</div>
     <div id="flood-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-height:18px;margin-bottom:8px;"></div>
     <div id="flood-results" style="display:none;">
       <hr class="divider" style="margin:0 0 16px;">
@@ -656,6 +659,39 @@
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
           <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Effective Date</div>
           <div id="flood-date" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
+        </div>
+      </div>
+
+      <!-- MSC → CoreLogic Panel Conversion -->
+      <div style="margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);">CoreLogic-Style Panel Conversion</div>
+          <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.05em;padding:2px 7px;border-radius:999px;background:rgba(245,184,92,0.12);color:var(--warn);border:1px solid rgba(245,184,92,0.3);">unverified beyond NC</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">County (parcel location)</div>
+            <select id="corelogic-county" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
+              <option value="">— select —</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">MSC Panel (auto-filled)</div>
+            <input type="text" id="corelogic-msc-input" placeholder="XXXXXXXXXXX" maxlength="11"
+              style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
+          </div>
+        </div>
+        <button onclick="FLOOD.convertCoreLogic()"
+          style="width:100%;padding:8px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.05em;margin-bottom:8px;">
+          ⇄ CONVERT TO CORELOGIC FORMAT
+        </button>
+        <div id="corelogic-error" style="display:none;font-family:var(--mono);font-size:10px;color:var(--danger);margin-bottom:8px;"></div>
+        <div id="corelogic-result" style="display:none;">
+          <div style="background:var(--surface);border:1px solid var(--accent2);border-radius:6px;padding:10px 12px;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);margin-bottom:3px;">CoreLogic Map Number</div>
+            <div id="corelogic-final" style="font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text);">—</div>
+          </div>
+          <div id="corelogic-steps" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);line-height:1.6;margin-top:8px;"></div>
         </div>
       </div>
       <button onclick="FLOOD.copyText()"
@@ -1769,6 +1805,42 @@ const FLOOD = (() => {
     'D':   'Possible but undetermined flood hazard',
   };
 
+  // NC county name -> 3-digit FIPS code (county portion only, no state prefix)
+  const NC_COUNTIES = {
+    "Alamance":"001","Alexander":"003","Alleghany":"005","Anson":"007","Ashe":"009",
+    "Avery":"011","Beaufort":"013","Bertie":"015","Bladen":"017","Brunswick":"019",
+    "Buncombe":"021","Burke":"023","Cabarrus":"025","Caldwell":"027","Camden":"029",
+    "Carteret":"031","Caswell":"033","Catawba":"035","Chatham":"037","Cherokee":"039",
+    "Chowan":"041","Clay":"043","Cleveland":"045","Columbus":"047","Craven":"049",
+    "Cumberland":"051","Currituck":"053","Dare":"055","Davidson":"057","Davie":"059",
+    "Duplin":"061","Durham":"063","Edgecombe":"065","Forsyth":"067","Franklin":"069",
+    "Gaston":"071","Gates":"073","Graham":"075","Granville":"077","Greene":"079",
+    "Guilford":"081","Halifax":"083","Harnett":"085","Haywood":"087","Henderson":"089",
+    "Hertford":"091","Hoke":"093","Hyde":"095","Iredell":"097","Jackson":"099",
+    "Johnston":"101","Jones":"103","Lee":"105","Lenoir":"107","Lincoln":"109",
+    "Macon":"111","Madison":"113","Martin":"115","McDowell":"117","Mecklenburg":"119",
+    "Mitchell":"121","Montgomery":"123","Moore":"125","Nash":"127","New Hanover":"129",
+    "Northampton":"131","Onslow":"133","Orange":"135","Pamlico":"137","Pasquotank":"139",
+    "Pender":"141","Perquimans":"143","Person":"145","Pitt":"147","Polk":"149",
+    "Randolph":"151","Richmond":"153","Robeson":"155","Rockingham":"157","Rowan":"159",
+    "Rutherford":"161","Sampson":"163","Scotland":"165","Stanly":"167","Stokes":"169",
+    "Surry":"171","Swain":"173","Transylvania":"175","Tyrrell":"177","Union":"179",
+    "Vance":"181","Wake":"183","Warren":"185","Washington":"187","Watauga":"189",
+    "Wayne":"191","Wilkes":"193","Wilson":"195","Yadkin":"197","Yancey":"199"
+  };
+
+  function populateCountySelect() {
+    const sel = document.getElementById('corelogic-county');
+    if (!sel || sel.options.length > 1) return; // already populated
+    Object.keys(NC_COUNTIES).sort().forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} County (${NC_COUNTIES[name]})`;
+      sel.appendChild(opt);
+    });
+  }
+  populateCountySelect();
+
   async function proxyFetch(url) {
     const proxies = [
       `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -1848,6 +1920,21 @@ const FLOOD = (() => {
       document.getElementById('flood-panel').textContent     = panel;
       document.getElementById('flood-date').textContent      = effDate;
 
+      // Auto-fill the CoreLogic converter's MSC input with the panel we just found
+      const mscInput = document.getElementById('corelogic-msc-input');
+      if (mscInput && panel !== 'N/A') mscInput.value = panel.replace(/\s+/g, '');
+
+      // Try to auto-select the county dropdown based on the matched address
+      populateCountySelect();
+      const countySel = document.getElementById('corelogic-county');
+      if (countySel) {
+        const addrUpper = (match.matchedAddress || '').toUpperCase();
+        const foundCounty = Object.keys(NC_COUNTIES).find(name => addrUpper.includes(name.toUpperCase()));
+        if (foundCounty) countySel.value = foundCounty;
+      }
+      document.getElementById('corelogic-result').style.display = 'none';
+      document.getElementById('corelogic-error').style.display = 'none';
+
       status.style.color = 'var(--accent2)';
       const matchedDfirm = panelFeature?.attributes?.DFIRM_ID?.trim();
       const dfirmNote = matchedDfirm ? ` (DFIRM ${matchedDfirm})` : '';
@@ -1866,7 +1953,9 @@ const FLOOD = (() => {
     const desc  = document.getElementById('flood-zone-desc').textContent;
     const panel = document.getElementById('flood-panel').textContent;
     const date  = document.getElementById('flood-date').textContent;
-    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFIRM PANEL: ${panel}\nMAP EFFECTIVE DATE: ${date}`;
+    const coreLogic = document.getElementById('corelogic-final')?.textContent;
+    const coreLogicLine = (coreLogic && coreLogic !== '—') ? `\nCORELOGIC PANEL: ${coreLogic}` : '';
+    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFIRM PANEL: ${panel}\nMAP EFFECTIVE DATE: ${date}${coreLogicLine}`;
     navigator.clipboard.writeText(text).then(() => {
       const c = document.getElementById('flood-copy-confirm');
       c.style.display = 'block';
@@ -1874,7 +1963,52 @@ const FLOOD = (() => {
     });
   }
 
-  return { lookup, copyText };
+  function convertCoreLogic() {
+    const errBox    = document.getElementById('corelogic-error');
+    const resultBox = document.getElementById('corelogic-result');
+    errBox.style.display    = 'none';
+    resultBox.style.display = 'none';
+
+    const raw = (document.getElementById('corelogic-msc-input').value || '').trim().toUpperCase().replace(/\s+/g, '');
+    const countyName = document.getElementById('corelogic-county').value;
+
+    const match = raw.match(/^(\d{10})([A-Z])$/);
+    if (!match) {
+      errBox.textContent = '⚠ MSC panel should be 10 digits + 1 letter suffix (e.g. 3720077200K).';
+      errBox.style.display = 'block';
+      return;
+    }
+    if (!countyName) {
+      errBox.textContent = '⚠ Select the actual county the parcel sits in first.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const tenDigits   = match[1];
+    const suffix      = match[2];
+    const communityId = tenDigits.slice(0, 6);
+    const panel       = tenDigits.slice(6, 10);
+
+    const fips = NC_COUNTIES[countyName];
+    const countyPrefix = `37${fips}C`; // 37 = NC state FIPS
+
+    const communityLast2 = communityId.slice(-2);
+    const panelFirst2    = panel.slice(0, 2);
+    const newPanel        = communityLast2 + panelFirst2;
+
+    const finalNumber = `${countyPrefix} ${newPanel}${suffix}`;
+
+    document.getElementById('corelogic-final').textContent = finalNumber;
+    document.getElementById('corelogic-steps').innerHTML = `
+      <div>1. Split MSC → community ${communityId} + panel ${panel} + suffix ${suffix}</div>
+      <div>2. ${countyName} FIPS = ${fips} → prefix "${countyPrefix}"</div>
+      <div>3. New panel digits → last 2 of community (${communityLast2}) + first 2 of panel (${panelFirst2}) = ${newPanel}</div>
+      <div>4. Result → ${countyPrefix} ${newPanel}${suffix}</div>
+    `;
+    resultBox.style.display = 'block';
+  }
+
+  return { lookup, copyText, convertCoreLogic };
 })();
 </script>
 </body>
