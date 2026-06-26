@@ -415,6 +415,7 @@
         <option value="alamance">Alamance County</option>
         <option value="cabarrus">Cabarrus County</option>
         <option value="chatham">Chatham County</option>
+        <option value="cumberland">Cumberland County</option>
         <option value="durham">Durham County</option>
         <option value="forsyth">Forsyth County</option>
         <option value="gaston">Gaston County</option>
@@ -447,7 +448,7 @@
     <div id="rl-addr-section" style="display:none;">
       <div style="margin-bottom:20px;">
         <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Subject Address</div>
-        <input type="text" id="rl-fullAddr" placeholder="123 Test St, Testville, NC 28000"
+        <input type="text" id="rl-fullAddr" placeholder="114 Polo Dr, Salisbury, NC 28144"
           style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;margin-bottom:10px;"
           onkeydown="if(event.key==='Enter') RL.openSearch()">
         <button class="btn" id="rl-search-btn" onclick="RL.openSearch()" style="border-color:var(--accent);color:var(--accent);">🔍 Search Public Records</button>
@@ -479,6 +480,15 @@
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(7-digit)</span></div>
           <input type="text" id="rl-chatham-parcel" placeholder="XXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- CUMBERLAND fields -->
+      <div id="rl-fields-cumberland" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(13-digit)</span></div>
+          <input type="text" id="rl-cumberland-reid" placeholder="XXXXXXXXXXXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -629,33 +639,23 @@
       <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);">🌊 FEMA Flood Zone Lookup</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">Auto-runs on launch</div>
     </div>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address &amp; county selected above — include city &amp; state on the address for best results</div>
-    <button onclick="FLOOD.lookup()"
-      style="width:100%;padding:10px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.08em;margin-bottom:10px;">
-      🔍 LOOK UP FLOOD DATA
-    </button>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results</div>
     <div id="flood-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-height:18px;margin-bottom:8px;"></div>
     <div id="flood-results" style="display:none;">
       <hr class="divider" style="margin:0 0 16px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
           <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Flood Zone</div>
           <div id="flood-zone" style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--accent);">—</div>
           <div id="flood-zone-desc" style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:3px;"></div>
         </div>
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Effective Date</div>
-          <div id="flood-date" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">FEMA MSC Panel</div>
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">FIRM Panel</div>
           <div id="flood-panel" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
         </div>
-        <div style="background:var(--bg);border:1px solid var(--accent2);border-radius:8px;padding:12px 14px;">
-          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">CoreLogic-style Panel</div>
-          <div id="flood-panel-corelogic" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent2);">—</div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+          <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Effective Date</div>
+          <div id="flood-date" style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">—</div>
         </div>
       </div>
       <button onclick="FLOOD.copyText()"
@@ -672,6 +672,7 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;">
     <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">📋 Changelog</div>
     <div style="max-height:90px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6;">
+      <div>• Added Cumberland County</div>
       <div>• Added Nash County</div>
       <div>• Added Alamance County</div>
       <div>• Added Chatham County</div>
@@ -941,6 +942,8 @@
 <iframe src="https://lrcpwa.ncptscloud.com/guilford/parcel-search"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://chathamnc.devnetwedge.com/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://taxpwa.co.cumberland.nc.us/camapwa/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://lrcpwa.ncptscloud.com/forsyth/parcel-search"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
@@ -1390,6 +1393,7 @@ const RL = (() => {
     alamance:    { name: 'Alamance County',    searchHint: 'Opens Alamance County Spatialest — search by address, then copy the parcel into the field below' },
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
     chatham:     { name: 'Chatham County',     searchHint: 'Opens Chatham County records — copy the parcel number into the field below' },
+    cumberland:  { name: 'Cumberland County',  searchHint: 'Opens Cumberland County records — copy the REID into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
     forsyth:     { name: 'Forsyth County',     searchHint: 'Opens Forsyth County records — copy the REID and PIN into the fields below' },
     gaston:      { name: 'Gaston County',      searchHint: 'Opens Gaston County records — copy the parcel number into the field below' },
@@ -1423,6 +1427,9 @@ const RL = (() => {
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
       setTimeout(() => window.open('https://gisservices.chathamcountync.gov/landinformation/', '_blank'), 150);
+    } else if (county === 'cumberland') {
+      window.open('https://taxpwa.co.cumberland.nc.us/camapwa/', '_blank');
+      setTimeout(() => window.open('https://www.arcgis.com/apps/webappviewer/index.html?id=a6ea68995c2349e9a177366288589be7', '_blank'), 150);
     } else if (county === 'durham') {
       window.open('https://taxcama.dconc.gov/camapwa/SearchProperty.aspx', '_blank');
       setTimeout(() => window.open('https://maps.durhamnc.gov/', '_blank'), 150);
@@ -1466,6 +1473,7 @@ const RL = (() => {
     document.getElementById('rl-fields-alamance').style.display     = 'none';
     document.getElementById('rl-fields-cabarrus').style.display    = 'none';
     document.getElementById('rl-fields-chatham').style.display     = 'none';
+    document.getElementById('rl-fields-cumberland').style.display  = 'none';
     document.getElementById('rl-fields-durham').style.display      = 'none';
     document.getElementById('rl-fields-forsyth').style.display     = 'none';
     document.getElementById('rl-fields-gaston').style.display      = 'none';
@@ -1520,6 +1528,8 @@ const RL = (() => {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
+    } else if (county === 'cumberland') {
+      window.open('https://taxpwa.co.cumberland.nc.us/camapwa/', '_blank');
     } else if (county === 'durham') {
       window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'forsyth') {
@@ -1589,6 +1599,13 @@ const RL = (() => {
       urls = [ zillow, gmaps,
         `https://gisservices.chathamcountync.gov/landinformation/`,
         `https://chathamnc.devnetwedge.com/parcel/view/${parcel}`
+      ];
+    } else if (county === 'cumberland') {
+      const reid = document.getElementById('rl-cumberland-reid').value.trim();
+      if (!reid) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://www.arcgis.com/apps/webappviewer/index.html?id=a6ea68995c2349e9a177366288589be7&find=${encodeURIComponent(reid)}`,
+        `https://taxpwa.co.cumberland.nc.us/camapwa/PropertySummary.aspx?REID=${reid}&pageIndex=0`
       ];
     } else if (county === 'durham') {
       const reid = document.getElementById('rl-reid').value.trim().replace(/\D/g, '');
@@ -1752,82 +1769,24 @@ const FLOOD = (() => {
     'D':   'Possible but undetermined flood hazard',
   };
 
-  // NC county name -> 3-digit FIPS code (full table, covers all 100 counties
-  // so new counties can be added to the launcher without touching this table).
-  const NC_COUNTY_FIPS = {
-    "alamance":"001","alexander":"003","alleghany":"005","anson":"007","ashe":"009",
-    "avery":"011","beaufort":"013","bertie":"015","bladen":"017","brunswick":"019",
-    "buncombe":"021","burke":"023","cabarrus":"025","caldwell":"027","camden":"029",
-    "carteret":"031","caswell":"033","catawba":"035","chatham":"037","cherokee":"039",
-    "chowan":"041","clay":"043","cleveland":"045","columbus":"047","craven":"049",
-    "cumberland":"051","currituck":"053","dare":"055","davidson":"057","davie":"059",
-    "duplin":"061","durham":"063","edgecombe":"065","forsyth":"067","franklin":"069",
-    "gaston":"071","gates":"073","graham":"075","granville":"077","greene":"079",
-    "guilford":"081","halifax":"083","harnett":"085","haywood":"087","henderson":"089",
-    "hertford":"091","hoke":"093","hyde":"095","iredell":"097","jackson":"099",
-    "johnston":"101","jones":"103","lee":"105","lenoir":"107","lincoln":"109",
-    "macon":"111","madison":"113","martin":"115","mcdowell":"117","mecklenburg":"119",
-    "mitchell":"121","montgomery":"123","moore":"125","nash":"127","newhanover":"129",
-    "northampton":"131","onslow":"133","orange":"135","pamlico":"137","pasquotank":"139",
-    "pender":"141","perquimans":"143","person":"145","pitt":"147","polk":"149",
-    "randolph":"151","richmond":"153","robeson":"155","rockingham":"157","rowan":"159",
-    "rutherford":"161","sampson":"163","scotland":"165","stanly":"167","stokes":"169",
-    "surry":"171","swain":"173","transylvania":"175","tyrrell":"177","union":"179",
-    "vance":"181","wake":"183","warren":"185","washington":"187","watauga":"189",
-    "wayne":"191","wilkes":"193","wilson":"195","yadkin":"197","yancey":"199"
-  };
-
-  // Converts a FEMA MSC community-panel number (e.g. "3720077200K") into the
-  // countywide-style panel number used on CoreLogic flood certifications
-  // (e.g. "37025C 5612K"). Reverse-engineered from confirmed MSC/CoreLogic
-  // pairs across Wake, Chatham & Cabarrus counties — see project notes.
-  // Formula: new panel digits = (last 2 digits of MSC community ID)
-  //                            + (first 2 digits of MSC panel number)
-  // Suffix letter carries over unchanged; county FIPS prefix is looked up
-  // independently from the actual parcel-level county (not the formula).
-  function mscToCoreLogic(mscPanel, countySlug) {
-    if (!mscPanel || mscPanel === 'N/A') return 'N/A';
-    const clean = mscPanel.trim().toUpperCase().replace(/\s+/g, '');
-    const match = clean.match(/^(\d{10})([A-Z])$/);
-    if (!match) return 'N/A — unexpected MSC format';
-    const fips = NC_COUNTY_FIPS[countySlug];
-    if (!fips) return 'N/A — select county';
-
-    const tenDigits   = match[1];
-    const suffix       = match[2];
-    const communityId  = tenDigits.slice(0, 6);
-    const panel         = tenDigits.slice(6, 10);
-    const newPanel      = communityId.slice(-2) + panel.slice(0, 2);
-    return `37${fips}C ${newPanel}${suffix}`;
-  }
-
-  // Races a direct (no-proxy) fetch against CORS proxies and returns whichever
-  // succeeds first. Most of the slowness in earlier versions came from trying
-  // proxies one-at-a-time in sequence and always going through them even when
-  // a direct request would have worked — this tries everything at once instead.
-  function fetchWithTimeout(url, ms) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ms);
-    return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
-  }
-
-  async function proxyFetch(url, timeoutMs = 8000) {
-    const attempts = [
-      fetchWithTimeout(url, timeoutMs), // direct — works for endpoints that allow CORS
-      fetchWithTimeout(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, timeoutMs),
-      fetchWithTimeout(`https://corsproxy.io/?url=${encodeURIComponent(url)}`, timeoutMs),
+  async function proxyFetch(url) {
+    const proxies = [
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
     ];
-    const results = await Promise.allSettled(attempts);
-    const ok = results.find(r => r.status === 'fulfilled' && r.value.ok);
-    if (ok) return ok.value;
-    throw new Error('All fetch attempts failed or timed out');
+    for (const proxy of proxies) {
+      try {
+        const res = await fetch(proxy);
+        if (res.ok) return res;
+      } catch(e) { /* try next */ }
+    }
+    throw new Error('All proxies failed');
   }
 
   async function lookup() {
-    const addr       = (document.getElementById('rl-fullAddr')?.value || '').trim();
-    const countySlug = document.getElementById('rl-county-select')?.value || '';
-    const status      = document.getElementById('flood-status');
-    const results     = document.getElementById('flood-results');
+    const addr    = (document.getElementById('rl-fullAddr')?.value || '').trim();
+    const status  = document.getElementById('flood-status');
+    const results = document.getElementById('flood-results');
     if (!addr) { status.textContent = '⚠ Enter an address in the Subject Address field above first.'; return; }
 
     status.style.color = 'var(--warn)';
@@ -1847,34 +1806,29 @@ const FLOOD = (() => {
       const { x: lng, y: lat } = match.coordinates;
       status.textContent = `⏳ Querying FEMA flood data…`;
 
-      // These three queries are all independent of each other (each only needs
-      // lng/lat), so run them in parallel instead of one after another — this
-      // alone cuts total wait time roughly to whichever single query is slowest,
-      // instead of the sum of all three.
-      const femaZoneUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
-      const jurisdictionUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=DFIRM_ID&returnGeometry=false&f=json`;
-      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE%2CDFIRM_ID&returnGeometry=false&f=json`;
-
-      const [zoneRes, jurisRes, panelRes] = await Promise.all([
-        proxyFetch(femaZoneUrl),
-        proxyFetch(jurisdictionUrl),
-        proxyFetch(femaPanelUrl),
-      ]);
-      const [zoneData, jurisData, panelData] = await Promise.all([
-        zoneRes.json(), jurisRes.json(), panelRes.json(),
-      ]);
-
-      const zone    = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
-      const subtype = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
+      const femaZoneUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
+      const zoneRes  = await proxyFetch(femaZoneUrl);
+      const zoneData = await zoneRes.json();
+      const zone     = zoneData?.features?.[0]?.attributes?.FLD_ZONE?.trim() || 'N/A';
+      const subtype  = zoneData?.features?.[0]?.attributes?.ZONE_SUBTY?.trim() || '';
 
       // Get the authoritative DFIRM_ID for this point (Political Jurisdictions layer).
       // This tells us which countywide/community dataset is CURRENT for this location,
       // since the panel layer below can contain leftover/superseded polygons from
-      // datasets that have since been replaced.
-      const currentDfirmId = jurisData?.features?.[0]?.attributes?.DFIRM_ID?.trim() || null;
+      // datasets that have since been replaced (e.g. a town's old standalone DFIRM
+      // still overlapping the same area as the current countywide DFIRM).
+      const jurisdictionUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=DFIRM_ID&returnGeometry=false&f=json`;
+      const jurisRes        = await proxyFetch(jurisdictionUrl);
+      const jurisData       = await jurisRes.json();
+      const currentDfirmId  = jurisData?.features?.[0]?.attributes?.DFIRM_ID?.trim() || null;
+
+      const femaPanelUrl = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/3/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FIRM_PAN%2CEFF_DATE%2CDFIRM_ID&returnGeometry=false&f=json`;
+      const panelRes  = await proxyFetch(femaPanelUrl);
+      const panelData = await panelRes.json();
 
       // Prefer the panel feature whose DFIRM_ID matches the authoritative jurisdiction
-      // dataset; fall back to the first feature if no match is found.
+      // dataset; fall back to the first feature if no match is found (e.g. jurisdiction
+      // query failed or returned nothing).
       let panelFeature = null;
       if (currentDfirmId) {
         panelFeature = panelData?.features?.find(
@@ -1883,19 +1837,16 @@ const FLOOD = (() => {
       }
       if (!panelFeature) panelFeature = panelData?.features?.[0];
 
-      const panel   = panelFeature?.attributes?.FIRM_PAN?.trim() || 'N/A';
-      const rawDate = panelFeature?.attributes?.EFF_DATE;
-      const effDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' }) : 'N/A';
-
-      const coreLogicPanel = mscToCoreLogic(panel, countySlug);
+      const panel     = panelFeature?.attributes?.FIRM_PAN?.trim() || 'N/A';
+      const rawDate   = panelFeature?.attributes?.EFF_DATE;
+      const effDate   = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { year:'numeric', month:'2-digit', day:'2-digit' }) : 'N/A';
 
       const zoneEl = document.getElementById('flood-zone');
       zoneEl.textContent = zone;
       zoneEl.style.color = zone === 'X' ? 'var(--accent2)' : (zone.startsWith('A') || zone.startsWith('V')) ? 'var(--danger)' : 'var(--accent)';
       document.getElementById('flood-zone-desc').textContent = subtype || ZONE_DESCRIPTIONS[zone] || '';
-      document.getElementById('flood-panel').textContent             = panel;
-      document.getElementById('flood-panel-corelogic').textContent   = coreLogicPanel;
-      document.getElementById('flood-date').textContent              = effDate;
+      document.getElementById('flood-panel').textContent     = panel;
+      document.getElementById('flood-date').textContent      = effDate;
 
       status.style.color = 'var(--accent2)';
       const matchedDfirm = panelFeature?.attributes?.DFIRM_ID?.trim();
@@ -1911,12 +1862,11 @@ const FLOOD = (() => {
   }
 
   function copyText() {
-    const zone       = document.getElementById('flood-zone').textContent;
-    const desc        = document.getElementById('flood-zone-desc').textContent;
-    const panel       = document.getElementById('flood-panel').textContent;
-    const coreLogic    = document.getElementById('flood-panel-corelogic').textContent;
-    const date         = document.getElementById('flood-date').textContent;
-    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFEMA MSC PANEL: ${panel}\nCORELOGIC-STYLE PANEL: ${coreLogic}\nMAP EFFECTIVE DATE: ${date}`;
+    const zone  = document.getElementById('flood-zone').textContent;
+    const desc  = document.getElementById('flood-zone-desc').textContent;
+    const panel = document.getElementById('flood-panel').textContent;
+    const date  = document.getElementById('flood-date').textContent;
+    const text  = `FLOOD ZONE: ${zone}${desc ? ' — '+desc : ''}\nFIRM PANEL: ${panel}\nMAP EFFECTIVE DATE: ${date}`;
     navigator.clipboard.writeText(text).then(() => {
       const c = document.getElementById('flood-copy-confirm');
       c.style.display = 'block';
