@@ -668,23 +668,25 @@
           <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);">CoreLogic-Style Panel Conversion</div>
           <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.05em;padding:2px 7px;border-radius:999px;background:rgba(245,184,92,0.12);color:var(--warn);border:1px solid rgba(245,184,92,0.3);">unverified beyond NC</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">County (parcel location)</div>
-            <select id="corelogic-county" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
-              <option value="">— select —</option>
-            </select>
+        <div id="corelogic-manual-controls" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">County (parcel location)</div>
+              <select id="corelogic-county" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
+                <option value="">— select —</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">MSC Panel (auto-filled)</div>
+              <input type="text" id="corelogic-msc-input" placeholder="XXXXXXXXXXX" maxlength="11"
+                style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
+            </div>
           </div>
-          <div>
-            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:4px;">MSC Panel (auto-filled)</div>
-            <input type="text" id="corelogic-msc-input" placeholder="XXXXXXXXXXX" maxlength="11"
-              style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:7px 8px;font-family:var(--mono);">
-          </div>
+          <button onclick="FLOOD.convertCoreLogic()"
+            style="width:100%;padding:8px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.05em;margin-bottom:8px;">
+            ⇄ CONVERT TO CORELOGIC FORMAT
+          </button>
         </div>
-        <button onclick="FLOOD.convertCoreLogic()"
-          style="width:100%;padding:8px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;letter-spacing:0.05em;margin-bottom:8px;">
-          ⇄ CONVERT TO CORELOGIC FORMAT
-        </button>
         <div id="corelogic-error" style="display:none;font-family:var(--mono);font-size:10px;color:var(--danger);margin-bottom:8px;"></div>
         <div id="corelogic-result" style="display:none;">
           <div style="background:var(--surface);border:1px solid var(--accent2);border-radius:6px;padding:10px 12px;">
