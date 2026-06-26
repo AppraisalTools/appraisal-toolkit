@@ -1393,7 +1393,7 @@ const RL = (() => {
     alamance:    { name: 'Alamance County',    searchHint: 'Opens Alamance County Spatialest — search by address, then copy the parcel into the field below' },
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
     chatham:     { name: 'Chatham County',     searchHint: 'Opens Chatham County records — copy the parcel number into the field below' },
-    cumberland:  { name: 'Cumberland County',  searchHint: 'Opens Cumberland County records — copy the REID into the field below' },
+    cumberland:  { name: 'Cumberland County',  searchHint: 'Opens Cumberland County records pre-filled — copy the REID into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
     forsyth:     { name: 'Forsyth County',     searchHint: 'Opens Forsyth County records — copy the REID and PIN into the fields below' },
     gaston:      { name: 'Gaston County',      searchHint: 'Opens Gaston County records — copy the parcel number into the field below' },
@@ -1529,7 +1529,7 @@ const RL = (() => {
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
     } else if (county === 'cumberland') {
-      window.open('https://taxpwa.co.cumberland.nc.us/camapwa/', '_blank');
+      window.open(`https://taxpwa.co.cumberland.nc.us/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'durham') {
       window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'forsyth') {
