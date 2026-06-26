@@ -1827,6 +1827,14 @@ const FLOOD = (() => {
     "Wayne":"191","Wilkes":"193","Wilson":"195","Yadkin":"197","Yancey":"199"
   };
 
+  // Maps the main launcher's county dropdown slugs to the NC_COUNTIES key names
+  const LAUNCHER_COUNTY_NAMES = {
+    alamance: 'Alamance', cabarrus: 'Cabarrus', chatham: 'Chatham', cumberland: 'Cumberland',
+    durham: 'Durham', forsyth: 'Forsyth', gaston: 'Gaston', guilford: 'Guilford',
+    harnett: 'Harnett', iredell: 'Iredell', johnston: 'Johnston', mecklenburg: 'Mecklenburg',
+    nash: 'Nash', orange: 'Orange', rowan: 'Rowan', wake: 'Wake',
+  };
+
   function populateCountySelect() {
     const sel = document.getElementById('corelogic-county');
     if (!sel || sel.options.length > 1) return; // already populated
@@ -1947,16 +1955,20 @@ const FLOOD = (() => {
       const mscInput = document.getElementById('corelogic-msc-input');
       if (mscInput && panel !== 'N/A') mscInput.value = panel.replace(/\s+/g, '');
 
-      // Try to auto-select the county dropdown based on the matched address
+      // Pull the county directly from the main launcher dropdown — it's already
+      // selected there, so there's no need (and no reliable way) to re-detect it
+      // from the matched address string (e.g. "Mooresville" falsely matching "Moore").
       populateCountySelect();
-      const countySel = document.getElementById('corelogic-county');
-      if (countySel) {
-        const addrUpper = (match.matchedAddress || '').toUpperCase();
-        const foundCounty = Object.keys(NC_COUNTIES).find(name => addrUpper.includes(name.toUpperCase()));
-        if (foundCounty) countySel.value = foundCounty;
-      }
+      const countySel    = document.getElementById('corelogic-county');
+      const launcherSlug = document.getElementById('rl-county-select')?.value;
+      const launcherName = LAUNCHER_COUNTY_NAMES[launcherSlug];
+      if (countySel && launcherName) countySel.value = launcherName;
+
       document.getElementById('corelogic-result').style.display = 'none';
       document.getElementById('corelogic-error').style.display = 'none';
+
+      // Auto-run the CoreLogic conversion now that both inputs are filled
+      if (launcherName && panel !== 'N/A') convertCoreLogic();
 
       status.style.color = 'var(--accent2)';
       const matchedDfirm = panelFeature?.attributes?.DFIRM_ID?.trim();
