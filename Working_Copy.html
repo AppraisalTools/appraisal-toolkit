@@ -381,6 +381,9 @@
   <button class="tab-btn" onclick="switchTab('durham', this)" style="display:none;">
     <span class="tab-icon">🏛</span>Durham Records
   </button>
+  <button class="tab-btn" onclick="switchTab('cumberland', this)" style="display:none;">
+    <span class="tab-icon">🏛</span>Cumberland Records
+  </button>
   <button class="tab-btn" onclick="switchTab('boundaries', this)">
     <span class="tab-icon">🗺</span>Neighborhood Boundaries
   </button>
@@ -960,12 +963,24 @@
   </div>
 </div>
 
+<div class="panel" id="panel-cumberland">
+  <div class="panel-header">
+    <div class="panel-title">Cumberland County Property Records</div>
+    <div class="panel-subtitle">Search Cumberland County properties — session stays active while this tab is open, enabling the Research Launcher search button.</div>
+  </div>
+  <div style="width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+    <iframe
+      src="https://taxpwa.co.cumberland.nc.us/camapwa/SearchProperty.aspx"
+      style="width:100%;height:700px;border:none;display:block;"
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
 <!-- Hidden session warmers -->
 <iframe src="https://lrcpwa.ncptscloud.com/guilford/parcel-search"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://chathamnc.devnetwedge.com/"
-  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
-<iframe src="https://taxpwa.co.cumberland.nc.us/camapwa/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://lrcpwa.ncptscloud.com/forsyth/parcel-search"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
