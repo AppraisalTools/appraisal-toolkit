@@ -1566,9 +1566,9 @@ const RL = (() => {
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
     } else if (county === 'cumberland') {
-      window.open(`https://taxpwa.co.cumberland.nc.us/camapwa/StreetSearch.aspx?StName=${encodeURIComponent(stripSuffix(street).toLowerCase())}&StNum=${encodeURIComponent(num)}`, '_blank');
+      window.open(`https://taxpwa.co.cumberland.nc.us/camapwa/StreetSearch.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'durham') {
-      window.open(`https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street).toLowerCase())}&StNum=${encodeURIComponent(num)}`, '_blank');
+      window.open(`https://taxcama.dconc.gov/camapwa/StreetSearch.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`, '_blank');
     } else if (county === 'forsyth') {
       window.open('https://lrcpwa.ncptscloud.com/forsyth/parcel-search', '_blank');
     } else if (county === 'gaston') {
@@ -1649,7 +1649,7 @@ const RL = (() => {
       if (!reid) { err.style.display = 'block'; success.style.display = 'none'; return; }
       urls = [ zillow, gmaps,
         `https://maps.durhamnc.gov/?pid=${reid}`,
-        `https://taxcama.dconc.gov/camapwa/StreetSearchResults.aspx?StName=${encodeURIComponent(stripSuffix(street).toLowerCase())}&StNum=${encodeURIComponent(num)}`
+        `https://taxcama.dconc.gov/camapwa/StreetSearch.aspx?StName=${encodeURIComponent(stripSuffix(street))}&StNum=${encodeURIComponent(num)}`
       ];
     } else if (county === 'forsyth') {
       const pin = document.getElementById('rl-forsyth-pin').value.trim();
