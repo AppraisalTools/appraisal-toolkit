@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Road Locator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f0f0f;
+    --bg2:       #161616;
+    --bg3:       #1e1e1e;
+    --border:    rgba(255,255,255,0.08);
+    --border2:   rgba(255,255,255,0.14);
+    --text:      #f0ede6;
+    --muted:     #888580;
+    --accent:    #d4a853;
+    --accent2:   #b8893a;
+    --danger:    #c0392b;
+    --motorway:  #4a9fd4;
+    --trunk:     #5aaa5a;
+    --primary:   #d4a853;
+    --secondary: #8a8a8a;
+    --tertiary:  #5a5a5a;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius:    6px;
+    --radius-lg: 10px;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- Header ---- */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    border: 1.5px solid var(--accent);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 14px; height: 14px; fill: var(--accent); }
+  .header-title {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .header-title span { color: var(--accent); }
+
+  /* ---- Main layout ---- */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    height: calc(100vh - 65px);
+  }
+
+  /* ---- Left panel ---- */
+  .panel {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .panel-section {
+    padding: 1.5rem 1.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ---- Search ---- */
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0.7rem 3rem 0.7rem 1rem;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-btn {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .search-btn:hover { background: var(--accent2); }
+  .search-btn:active { transform: translateY(-50%) scale(0.95); }
+  .search-btn svg { width: 14px; height: 14px; fill: #0f0f0f; }
+  .search-btn.loading { pointer-events: none; opacity: 0.6; }
+
+  /* ---- Status ---- */
+  .status-line {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    min-height: 1rem;
+    line-height: 1.5;
+  }
+  .status-line.err { color: #e57373; }
+  .status-line.ok  { color: #7dbd7d; }
+
+  /* ---- Direction cards ---- */
+  .dir-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .dir-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    transition: border-color 0.2s, opacity 0.3s;
+    opacity: 0.4;
+  }
+  .dir-card.active { opacity: 1; }
+  .dir-card.active.motorway  { border-color: rgba(74,159,212,0.4); }
+  .dir-card.active.trunk     { border-color: rgba(90,170,90,0.4); }
+  .dir-card.active.primary   { border-color: rgba(212,168,83,0.4); }
+  .dir-card.active.secondary { border-color: rgba(138,138,138,0.3); }
+  .dir-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .dir-arrow {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    display: grid; place-items: center;
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .dir-card.active .dir-arrow { border-color: var(--accent); color: var(--accent); }
+  .dir-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dir-name {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.35;
+    margin-bottom: 4px;
+    word-break: break-word;
+  }
+  .dir-meta {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+  .type-pill {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .pill-motorway  { background: rgba(74,159,212,0.15); color: #4a9fd4; border: 1px solid rgba(74,159,212,0.3); }
+  .pill-trunk     { background: rgba(90,170,90,0.15);  color: #5aaa5a; border: 1px solid rgba(90,170,90,0.3); }
+  .pill-primary   { background: rgba(212,168,83,0.15); color: #d4a853; border: 1px solid rgba(212,168,83,0.3); }
+  .pill-secondary { background: rgba(138,138,138,0.12); color: #aaa; border: 1px solid rgba(138,138,138,0.25); }
+  .pill-tertiary  { background: rgba(90,90,90,0.15); color: #888; border: 1px solid rgba(90,90,90,0.25); }
+  .dir-empty { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+  .override-wrap { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .override-label { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .override-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 8px; font-family: var(--font-sans); font-size: 0.78rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .override-input:focus { border-color: var(--accent); }
+  .override-input::placeholder { color: var(--muted); font-style: italic; }
+  .override-input.has-value { border-color: rgba(212,168,83,0.5); background: rgba(212,168,83,0.05); }
+
+  /* ---- Summary output ---- */
+  .summary-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text);
+    font-weight: 300;
+    min-height: 56px;
+    position: relative;
+  }
+  .summary-placeholder {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+  .copy-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .copy-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 4px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: #5aaa5a; color: #5aaa5a; }
+  .copy-btn svg { width: 12px; height: 12px; }
+
+  /* ---- Legend ---- */
+  .legend-row { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ---- Map panel ---- */
+  .map-panel { position: relative; background: #111; }
+  #map { width: 100%; height: 100%; }
+
+  /* Custom Leaflet overrides */
+  .leaflet-container { background: #1a1a1a !important; font-family: var(--font-sans) !important; }
+  .leaflet-tile-pane { filter: brightness(0.75) saturate(0.5) contrast(1.1); }
+  .leaflet-popup-content-wrapper {
+    background: var(--bg2) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: none !important;
+    font-family: var(--font-sans) !important;
+    font-size: 13px !important;
+  }
+  .leaflet-popup-tip { background: var(--bg2) !important; }
+  .leaflet-popup-content b { color: var(--accent); font-weight: 500; }
+  .leaflet-control-zoom a {
+    background: var(--bg2) !important;
+    color: var(--muted) !important;
+    border-color: var(--border2) !important;
+  }
+  .leaflet-control-zoom a:hover { background: var(--bg3) !important; color: var(--text) !important; }
+  .leaflet-control-attribution {
+    background: rgba(15,15,15,0.7) !important;
+    color: var(--muted) !important;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: var(--muted) !important; }
+
+  /* ---- Pin drop mode ---- */
+  .coord-badge { position:absolute; top:12px; left:12px; z-index:600; display:none; background:rgba(15,15,15,0.82); border:1px solid var(--border2); border-radius:var(--radius); padding:4px 10px; font-family:var(--font-mono); font-size:0.65rem; color:var(--muted); pointer-events:none; }
+  .pin-btn { position:absolute; top:12px; right:12px; z-index:600; display:none; background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius); padding:6px 12px; font-family:var(--font-mono); font-size:0.68rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+  .pin-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .pin-btn.active { background:rgba(212,168,83,0.15); border-color:var(--accent); color:var(--accent); }
+  .map-panel.pin-mode #map { cursor:crosshair !important; }
+  .pin-mode-banner { display:none; position:absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:600; background:rgba(212,168,83,0.9); color:#0f0f0f; font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.06em; padding:5px 14px; border-radius:20px; white-space:nowrap; pointer-events:none; }
+  .map-panel.pin-mode .pin-mode-banner { display:block; }
+
+  /* ---- Map overlay hint ---- */
+  .map-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    z-index: 500;
+    transition: opacity 0.4s;
+  }
+  .map-hint.hidden { opacity: 0; }
+  .hint-icon {
+    width: 56px; height: 56px;
+    border: 1.5px solid var(--border2);
+    border-radius: 50%;
+    display: grid; place-items: center;
+  }
+  .hint-icon svg { width: 24px; height: 24px; fill: var(--muted); }
+  .hint-text {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---- Spinner ---- */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(212,168,83,0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .loading-state .spinner { display: block; }
+  .loading-state .search-icon { display: none; }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 768px) {
+    main { grid-template-columns: 1fr; grid-template-rows: auto 300px; height: auto; }
+    .map-panel { height: 300px; }
+    header { padding: 1rem 1.25rem; }
+    .panel-section { padding: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="fileBanner" style="display:none; background:#7a3a00; border-bottom:1px solid #a05010; padding:0.75rem 2rem; font-family:var(--font-mono); font-size:0.75rem; line-height:1.7; color:#f5d5a0;">
+  <strong style="color:#ffc06a;">⚠ Local file detected.</strong>
+  Your browser blocks API requests from files opened directly from disk. Serve this file over a local server instead:<br>
+  <span style="color:#ffc06a;">Option 1 — Python (most computers):</span>
+  Open a terminal in this file's folder and run: <code style="background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:3px;">python -m http.server 8080</code>
+  then open <a href="http://localhost:8080/road-finder.html" style="color:#ffc06a;">http://localhost:8080/road-finder.html</a><br>
+  <span style="color:#ffc06a;">Option 2 — VS Code:</span> Open the folder in VS Code and click <em>Go Live</em> (Live Server extension).<br>
+  <span style="color:#ffc06a;">Option 3 — Node:</span> Run <code style="background:rgba(0,0,0,0.3); padding:1px 6px; border-radius:3px;">npx serve .</code> then open the URL it shows.
+</div>
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 16 16"><path d="M8 1L8 15M1 8L15 8M3.5 3.5L12.5 12.5M12.5 3.5L3.5 12.5" stroke="#d4a853" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+  </div>
+  <div class="header-title"><span>Road</span> Locator — nearest major roads</div>
+</header>
+
+<main>
+  <!-- Left panel -->
+  <div class="panel">
+
+    <!-- Search -->
+    <div class="panel-section">
+      <div class="section-label">Address lookup</div>
+      <div class="search-wrap">
+        <input type="text" id="addr" placeholder="123 Main St, City, State…" autocomplete="off"/>
+        <button class="search-btn" id="searchBtn" onclick="lookup()" aria-label="Search">
+          <span class="search-icon">
+            <svg viewBox="0 0 16 16"><path d="M10.5 10.5L14 14M6.5 11a4.5 4.5 0 100-9 4.5 4.5 0 000 9z" stroke="#0f0f0f" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+          </span>
+          <span class="spinner"></span>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+        <label style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;">Min distance</label>
+        <input type="number" id="minDist" value="2" min="0.5" max="9" step="0.5" style="width:70px;text-align:center;" />
+        <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--muted);">miles (max 10)</span>
+      </div>
+      <div class="status-line" id="status">Enter an address to begin.</div>
+    </div>
+
+    <!-- Summary sentence -->
+    <div class="panel-section">
+      <div class="section-label">Plain text output</div>
+      <div class="summary-block" id="summaryBlock">
+        <span class="summary-placeholder" id="summaryPlaceholder">Result will appear here after a search.</span>
+        <span id="summaryText" style="display:none"></span>
+      </div>
+      <div class="copy-row" id="copyRow" style="display:none">
+        <button class="copy-btn" id="copyBtn" onclick="copySummary()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 011-1h8"/></svg>
+          Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Direction cards -->
+    <div class="panel-section">
+      <div class="section-label">Nearest road by direction</div>
+      <div class="dir-grid" id="dirGrid">
+        <div class="dir-card" id="card-N" data-dir="N">
+          <div class="dir-indicator"><div class="dir-arrow">↑</div><div class="dir-label">North</div></div>
+          <div class="dir-empty">—</div>
+          <div class="override-wrap"><div class="override-label">Override</div><input class="override-input" id="override-N" type="text" placeholder="Enter road name…" oninput="onOverride()" /></div>
+        </div>
+        <div class="dir-card" id="card-E" data-dir="E">
+          <div class="dir-indicator"><div class="dir-arrow">→</div><div class="dir-label">East</div></div>
+          <div class="dir-empty">—</div>
+          <div class="override-wrap"><div class="override-label">Override</div><input class="override-input" id="override-E" type="text" placeholder="Enter road name…" oninput="onOverride()" /></div>
+        </div>
+        <div class="dir-card" id="card-S" data-dir="S">
+          <div class="dir-indicator"><div class="dir-arrow">↓</div><div class="dir-label">South</div></div>
+          <div class="dir-empty">—</div>
+          <div class="override-wrap"><div class="override-label">Override</div><input class="override-input" id="override-S" type="text" placeholder="Enter road name…" oninput="onOverride()" /></div>
+        </div>
+        <div class="dir-card" id="card-W" data-dir="W">
+          <div class="dir-indicator"><div class="dir-arrow">←</div><div class="dir-label">West</div></div>
+          <div class="dir-empty">—</div>
+          <div class="override-wrap"><div class="override-label">Override</div><input class="override-input" id="override-W" type="text" placeholder="Enter road name…" oninput="onOverride()" /></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="panel-section">
+      <div class="section-label">Road classification</div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:#4a9fd4"></div>Motorway / freeway (highest priority)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#5aaa5a"></div>Trunk road</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d4a853"></div>Primary road</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8a8a8a"></div>Secondary road</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#5a5a5a"></div>Tertiary road</div>
+      </div>
+      <p style="font-size:0.7rem; color:var(--muted); margin-top:10px; font-family:var(--font-mono); line-height:1.6;">
+        Roads must be 1–10 miles from the address. Data via OpenStreetMap / Overpass API.
+      </p>
+    </div>
+
+  </div><!-- /panel -->
+
+  <!-- Map panel -->
+  <div class="map-panel" id="mapPanel">
+    <div id="map"></div>
+    <div class="coord-badge" id="coordBadge"></div>
+    <button class="pin-btn" id="pinBtn" onclick="togglePinMode()">📍 Move pin</button>
+    <div class="pin-mode-banner">Click anywhere on the map to reposition the subject pin</div>
+    <div class="map-hint" id="mapHint">
+      <div class="hint-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div class="hint-text">Map will render after search</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const RANK = { motorway:1, trunk:2, primary:3, secondary:4, tertiary:5, unclassified:6, residential:7, motorway_link:20, trunk_link:21, primary_link:22 };
+const TYPE_LABEL = { motorway:'Motorway / freeway', trunk:'Trunk road', primary:'Primary road', secondary:'Secondary road', tertiary:'Tertiary road', motorway_link:'Motorway link', trunk_link:'Trunk link', primary_link:'Primary link' };
+const PILL_CLASS = { motorway:'pill-motorway', trunk:'pill-trunk', primary:'pill-primary', secondary:'pill-secondary', tertiary:'pill-tertiary', motorway_link:'pill-motorway', trunk_link:'pill-trunk', primary_link:'pill-primary' };
+const HW_CLASS   = { motorway:'motorway', trunk:'trunk', primary:'primary', secondary:'secondary', tertiary:'tertiary', motorway_link:'motorway', trunk_link:'trunk', primary_link:'primary' };
+const COLORS     = { motorway:'#4a9fd4', trunk:'#5aaa5a', primary:'#d4a853', secondary:'#8a8a8a', tertiary:'#5a5a5a', motorway_link:'#4a9fd4', trunk_link:'#5aaa5a', primary_link:'#d4a853' };
+const DIR_ARROWS = { N:'↑', E:'→', S:'↓', W:'←' };
+const DIR_NAMES  = { N:'North', E:'East', S:'South', W:'West' };
+const MI = 1609.34;
+
+// Full 90° sectors — direction is determined by which quadrant the segment sits in.
+// The orientation check (not the sector width) is what prevents diagonal roads from
+// qualifying: only horizontal segments enter N/S slots, only vertical enter E/W slots.
+const DIRS = [
+  {key:'N', minBear:315, wrap:true, maxBear:45},
+  {key:'E', minBear:45,  maxBear:135},
+  {key:'S', minBear:135, maxBear:225},
+  {key:'W', minBear:225, maxBear:315},
+];
+
+let leafMap = null, mapLayers = [], lastSummary = '';
+
+function bearing(lat1,lon1,lat2,lon2) {
+  const r=Math.PI/180, dLon=(lon2-lon1)*r;
+  const y=Math.sin(dLon)*Math.cos(lat2*r);
+  const x=Math.cos(lat1*r)*Math.sin(lat2*r)-Math.sin(lat1*r)*Math.cos(lat2*r)*Math.cos(dLon);
+  return ((Math.atan2(y,x)*180/Math.PI)+360)%360;
+}
+function dist(lat1,lon1,lat2,lon2) {
+  const R=6371000,r=Math.PI/180,dLat=(lat2-lat1)*r,dLon=(lon2-lon1)*r;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function inDir(b,d) {
+  if(d.wrap) return b>=d.minBear||b<d.maxBear;
+  return b>=d.minBear&&b<d.maxBear;
+}
+
+function setStatus(msg, type) {
+  const el=document.getElementById('status');
+  el.textContent=msg;
+  el.className='status-line'+(type?' '+type:'');
+}
+
+function roadLabel(r) {
+  if(r.wayName && r.ref) return `${r.ref} (${r.wayName})`;
+  return r.wayName || r.ref || (r.hw||'').replace(/_/g,' ');
+}
+
+function getEffectiveLabel(k, rm) {
+  const override=document.getElementById(`override-${k}`)?.value.trim();
+  if(override) return override;
+  return rm[k] ? roadLabel(rm[k]) : null;
+}
+
+function buildSummary(rm) {
+  const mapping=[{dir:'S',prep:'north of'},{dir:'N',prep:'south of'},{dir:'W',prep:'east of'},{dir:'E',prep:'west of'}];
+  const parts=mapping
+    .map(m=>({label:getEffectiveLabel(m.dir,rm),prep:m.prep}))
+    .filter(m=>m.label)
+    .map(m=>`${m.prep} ${m.label}`);
+  if(!parts.length) return '';
+  if(parts.length===1) return `The subject is located ${parts[0]}.`;
+  const last=parts.pop();
+  return `The subject is located ${parts.join(', ')}, and ${last}.`;
+}
+
+function onOverride() {
+  ['N','E','S','W'].forEach(k=>{
+    const el=document.getElementById(`override-${k}`);
+    if(el) el.classList.toggle('has-value',el.value.trim().length>0);
+  });
+  const summary=buildSummary(window._lastRm||{});
+  if(summary){
+    lastSummary=summary;
+    document.getElementById('summaryPlaceholder').style.display='none';
+    document.getElementById('summaryText').textContent=summary;
+    document.getElementById('summaryText').style.display='inline';
+    document.getElementById('copyRow').style.display='flex';
+  }
+}
+
+const OVERRIDE_HTML = (k) => `<div class="override-wrap"><div class="override-label">Override</div><input class="override-input" id="override-${k}" type="text" placeholder="Enter road name…" oninput="onOverride()" /></div>`;
+
+function updateCard(k, r) {
+  const card=document.getElementById(`card-${k}`);
+  if(!r) {
+    card.className='dir-card';
+    card.innerHTML=`
+      <div class="dir-indicator"><div class="dir-arrow">${DIR_ARROWS[k]}</div><div class="dir-label">${DIR_NAMES[k]}</div></div>
+      <div class="dir-empty">No road found (1–10 mi)</div>
+      ${OVERRIDE_HTML(k)}`;
+    return;
+  }
+  const miles=(r.dist/MI).toFixed(1);
+  const lbl=roadLabel(r);
+  const hwc=HW_CLASS[r.hw]||'secondary';
+  const pillc=PILL_CLASS[r.hw]||'pill-secondary';
+  const tl=TYPE_LABEL[r.hw]||r.hw;
+  card.className=`dir-card active ${hwc}`;
+  card.innerHTML=`
+    <div class="dir-indicator"><div class="dir-arrow">${DIR_ARROWS[k]}</div><div class="dir-label">${DIR_NAMES[k]}</div></div>
+    <div class="dir-name">${lbl}</div>
+    <div class="dir-meta">${miles} mi away</div>
+    <span class="type-pill ${pillc}">${tl}</span>
+      ${OVERRIDE_HTML(k)}`;
+}
+
+function initMap() {
+  if(leafMap) return;
+  leafMap=L.map('map',{zoomControl:true,scrollWheelZoom:true,attributionControl:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:18
+  }).addTo(leafMap);
+  leafMap.on('click', onMapClick);
+}
+
+function clearMap() { mapLayers.forEach(l=>leafMap.removeLayer(l)); mapLayers=[]; }
+
+function markerIcon(color, size=12) {
+  return L.divIcon({
+    html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.8);box-shadow:0 0 6px rgba(0,0,0,0.5)"></div>`,
+    iconSize:[size,size], iconAnchor:[size/2,size/2], className:''
+  });
+}
+
+async function runSearch(lat, lon, displayName) {
+  const btn=document.getElementById('searchBtn');
+  btn.classList.add('loading'); btn.disabled=true;
+  const minDistMi=(parseFloat(document.getElementById('minDist').value)||2)*MI;
+  document.getElementById('summaryText').style.display='none';
+  document.getElementById('summaryPlaceholder').style.display='inline';
+  document.getElementById('copyRow').style.display='none';
+  ['N','E','S','W'].forEach(k=>{const el=document.getElementById(`override-${k}`);if(el){el.value='';el.classList.remove('has-value');}});
+  setStatus(`Located: ${displayName.split(',').slice(0,3).join(', ')} — fetching road data… (Use 📍 Move pin on map to correct placement)`);
+
+  const deg10=10/69;
+  const bbox=`${lat-deg10},${lon-deg10},${lat+deg10},${lon+deg10}`;
+  const q=`[out:json][timeout:30];(way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|motorway_link|trunk_link|primary_link)$"](${bbox}););out geom;`;
+  let ways;
+  // Try each endpoint with both POST and GET, plus a CORS-proxy fallback
+  const overpassEndpoints=[
+    {url:'https://overpass-api.de/api/interpreter',       method:'POST'},
+    {url:'https://overpass.kumi.systems/api/interpreter',  method:'POST'},
+    {url:'https://overpass.openstreetmap.ru/api/interpreter', method:'POST'},
+    {url:`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`, method:'GET'},
+    {url:`https://overpass.kumi.systems/api/interpreter?data=${encodeURIComponent(q)}`, method:'GET'},
+    {url:`https://corsproxy.io/?url=${encodeURIComponent('https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q))}`, method:'GET'},
+  ];
+  let overpassOk=false;
+  for(let i=0;i<overpassEndpoints.length;i++) {
+    const ep=overpassEndpoints[i];
+    setStatus(`Fetching road data (attempt ${i+1} of ${overpassEndpoints.length})...`);
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),18000);
+    try {
+      const fetchOpts=ep.method==='POST'
+        ? {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(q)}`,signal:controller.signal}
+        : {method:'GET',signal:controller.signal};
+      const r=await fetch(ep.url, fetchOpts);
+      clearTimeout(timer);
+      if(!r.ok) continue;
+      const text=await r.text();
+      let parsed;
+      try{ parsed=JSON.parse(text); }catch(e){ continue; }
+      // corsproxy.io wraps response — unwrap if needed
+      const data=parsed.contents?JSON.parse(parsed.contents):parsed;
+      if(!data.elements) continue;
+      ways=data.elements; window._lastWays=ways;
+      overpassOk=true;
+      break;
+    } catch(e){ clearTimeout(timer); continue; }
+  }
+  if(!overpassOk){
+    setStatus('Road data unavailable — all servers failed. Check your internet connection and try again in a moment.','err');
+    btn.classList.remove('loading');btn.disabled=false;return;
+  }
+
+  if(!ways||!ways.length){setStatus('No qualifying roads found within 10 miles.','err');btn.classList.remove('loading');btn.disabled=false;return;}
+
+  // Segment orientation: bearing of a single node-to-node segment
+  // Threshold: ±22° from true cardinal — stricter than before to avoid nearly-diagonal roads.
+  // Horizontal (E-W):  68–112°
+  // Vertical  (N-S):   0–22° or 158–180°
+  // Diagonal:          everything else — excluded from all direction slots
+  function segmentOrientation(p1, p2) {
+    const b = bearing(p1.lat,p1.lon,p2.lat,p2.lon) % 180;
+    if(b>68&&b<112) return 'horizontal';
+    if(b<=22||b>=158) return 'vertical';
+    return 'diagonal';
+  }
+
+  // For each segment: determine which 90° quadrant it sits in (bearing from subject),
+  // then check that the segment orientation is perpendicular to that direction.
+  // Horizontal segments in the N/S quadrants qualify; vertical in E/W quadrants qualify.
+  const rm={};
+  for(const way of ways) {
+    const hw=way.tags?.highway;
+    const rank=RANK[hw]||99;
+    if(rank>25) continue;
+    const geom=way.geometry||[];
+    if(geom.length<2) continue;
+    const cRef=way.tags?.ref||'', cName=way.tags?.name||'';
+    const cNamed=!!(cRef||cName);
+    for(let i=0;i<geom.length-1;i++) {
+      const p1=geom[i], p2=geom[i+1];
+      const midLat=(p1.lat+p2.lat)/2, midLon=(p1.lon+p2.lon)/2;
+      const d=dist(lat,lon,midLat,midLon);
+      if(d<minDistMi||d>10*MI) continue;
+      const orient=segmentOrientation(p1,p2);
+      if(orient==='diagonal') continue;
+      const b=bearing(lat,lon,midLat,midLon);
+      for(const dir of DIRS) {
+        if(!inDir(b,dir)) continue;
+        const need=(dir.key==='N'||dir.key==='S')?'horizontal':'vertical';
+        if(orient!==need) continue;
+        const k=dir.key;
+        const distMi=d/MI;
+        // Additive score: distance dominates, road type adds a small penalty per rank step.
+        // Each rank step = 0.4 miles, so a residential (rank 7) needs to be ~2.4 miles
+        // closer than a primary (rank 3) to beat it — but 3mi residential beats 5.6mi primary.
+        const score=distMi+(rank-1)*0.4;
+        const eScore=rm[k]?rm[k].score:Infinity;
+        const eNamed=rm[k]?!!(rm[k].ref||rm[k].wayName):false;
+        const better=!rm[k]
+          ||score<eScore-0.1
+          ||(Math.abs(score-eScore)<0.1&&cNamed&&!eNamed)
+          ||(Math.abs(score-eScore)<0.1&&cNamed===eNamed&&d<rm[k].dist);
+        if(better) rm[k]={rank,hw,dist:d,score,lat:midLat,lon:midLon,ref:cRef,wayName:cName};
+      }
+    }
+  }
+
+  // Reposition each marker to the segment of the winning road that is most directly
+  // in the cardinal direction — but only among segments that pass the same orientation
+  // and direction-sector checks used during selection.
+  const cardinalBear={N:0,E:90,S:180,W:270};
+  const dirObj={N:DIRS[0],E:DIRS[1],S:DIRS[2],W:DIRS[3]};
+  for(const k of ['N','E','S','W']) {
+    if(!rm[k]) continue;
+    const winRef=rm[k].ref, winName=rm[k].wayName;
+    if(!winRef&&!winName) continue;
+    const need=(k==='N'||k==='S')?'horizontal':'vertical';
+    let bestDiff=Infinity, bestLat=rm[k].lat, bestLon=rm[k].lon;
+    for(const way of ways) {
+      const sameRef=winRef&&(way.tags?.ref||'')===winRef;
+      const sameName=winName&&(way.tags?.name||'')===winName;
+      if(!sameRef&&!sameName) continue;
+      const geom=way.geometry||[];
+      for(let i=0;i<geom.length-1;i++) {
+        const p1=geom[i],p2=geom[i+1];
+        const mLat=(p1.lat+p2.lat)/2, mLon=(p1.lon+p2.lon)/2;
+        const d=dist(lat,lon,mLat,mLon);
+        if(d<minDistMi||d>10*MI) continue;
+        // Must pass orientation and direction-sector checks
+        const orient=segmentOrientation(p1,p2);
+        if(orient!==need) continue;
+        const b=bearing(lat,lon,mLat,mLon);
+        if(!inDir(b,dirObj[k])) continue;
+        const diff=Math.abs(((b-cardinalBear[k]+180+360)%360)-180);
+        if(diff<bestDiff){bestDiff=diff;bestLat=mLat;bestLon=mLon;}
+      }
+    }
+    rm[k].lat=bestLat; rm[k].lon=bestLon;
+  }
+
+  ['N','E','S','W'].forEach(k=>updateCard(k,rm[k]));
+
+  window._lastRm=rm;
+  const summary=buildSummary(rm);
+  if(summary) {
+    lastSummary=summary;
+    document.getElementById('summaryPlaceholder').style.display='none';
+    document.getElementById('summaryText').textContent=summary;
+    document.getElementById('summaryText').style.display='inline';
+    document.getElementById('copyRow').style.display='flex';
+  }
+
+  const found=Object.keys(rm).length;
+  setStatus(`Found roads in ${found} of 4 directions.`, found>0?'ok':'');
+
+  initMap();
+  clearMap();
+  document.getElementById('mapHint').classList.add('hidden');
+
+  window._lastSubLat=lat; window._lastSubLon=lon;
+  const badge=document.getElementById('coordBadge');
+  if(badge){badge.style.display='block';badge.textContent=`📍 ${lat.toFixed(5)}, ${lon.toFixed(5)}`;}
+  window._dirMarkers={}; window._dirLines={};
+  const origin=L.marker([lat,lon],{icon:markerIcon('#e74c3c',14),zIndexOffset:1000}).addTo(leafMap)
+    .bindPopup(`<b>Subject property</b><br>${displayName.split(',').slice(0,2).join(',')}`);
+  mapLayers.push(origin);
+
+  const bounds=[[lat,lon]];
+  for(const k of ['N','E','S','W']) {
+    const r=rm[k];
+    if(!r) continue;
+    const col=COLORS[r.hw]||'#8a8a8a';
+    const lbl=roadLabel(r);
+    const miles=(r.dist/MI).toFixed(1);
+    const dot=L.marker([r.lat,r.lon],{icon:markerIcon(col),draggable:true}).addTo(leafMap)
+      .bindPopup(`<b>${lbl}</b><br>${TYPE_LABEL[r.hw]||r.hw}<br>${miles} mi ${DIR_NAMES[k]}`);
+    dot.on('dragstart',()=>{dot._justDragged=true; dot.closePopup();});
+    dot.on('dragend',()=>onDirPinDrop(k,dot));
+    dot.on('click',(e)=>{ if(dot._justDragged){ dot._justDragged=false; dot.closePopup(); L.DomEvent.stop(e); } });
+    const line=L.polyline([[lat,lon],[r.lat,r.lon]],{color:col,weight:1.5,dashArray:'6,5',opacity:0.55}).addTo(leafMap);
+    mapLayers.push(dot,line);
+    window._dirMarkers=window._dirMarkers||{}; window._dirMarkers[k]=dot;
+    bounds.push([r.lat,r.lon]);
+  }
+  leafMap.fitBounds(bounds,{padding:[40,40]});
+
+  document.getElementById('pinBtn').style.display='block';
+  btn.classList.remove('loading');
+  btn.disabled=false;
+}
+
+async function lookup() {
+  const rawAddr=document.getElementById('addr').value.trim();
+  // Street-type abbreviations — only expand when preceded by a letter word
+  // (prevents "St Andrews" → "Street Andrews", "Dr Smith" → "Drive Smith")
+  const abbrevMap=[
+    [/(?<=[a-zA-Z]\s)Ct\b/gi,'Court'],
+    [/(?<=[a-zA-Z]\s)Ln\b/gi,'Lane'],
+    [/(?<=[a-zA-Z]\s)Blvd\b/gi,'Boulevard'],
+    [/(?<=[a-zA-Z]\s)Pkwy\b/gi,'Parkway'],
+    [/(?<=[a-zA-Z]\s)Rd\b/gi,'Road'],
+    [/(?<=[a-zA-Z]\s)St\b/gi,'Street'],
+    [/(?<=[a-zA-Z]\s)Cir\b/gi,'Circle'],
+    [/(?<=[a-zA-Z]\s)Trl\b/gi,'Trail'],
+    [/(?<=[a-zA-Z]\s)Dr\b/gi,'Drive'],
+    [/(?<=[a-zA-Z]\s)Ave\b/gi,'Avenue'],
+    [/(?<=[a-zA-Z]\s)Pl\b/gi,'Place'],
+    [/(?<=[a-zA-Z]\s)Fwy\b/gi,'Freeway'],
+    [/(?<=[a-zA-Z]\s)Hwy\b/gi,'Highway'],
+  ];
+  const addr=abbrevMap.reduce((a,[p,r])=>a.replace(p,r),rawAddr);
+  if(!addr){setStatus('Please enter an address.','err');return;}
+  const btn=document.getElementById('searchBtn');
+  btn.classList.add('loading'); btn.disabled=true;
+  setStatus('Geocoding address…');
+  const geocoders=[
+    {name:'US Census',  fn:async(q)=>{
+      const r=await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(q)}&benchmark=Public_AR_Current&format=json`);
+      const d=await r.json();
+      const m=d?.result?.addressMatches;
+      if(!m?.length) return null;
+      return{lat:m[0].coordinates.y, lon:m[0].coordinates.x, name:m[0].matchedAddress, quality:'exact'};
+    }},
+    {name:'ArcGIS', fn:async(q)=>{
+      const r=await fetch(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?SingleLine=${encodeURIComponent(q)}&outFields=Match_addr,Addr_type&f=json&maxLocations=1`);
+      const d=await r.json();
+      const c=d?.candidates;
+      if(!c?.length) return null;
+      const best=c[0];
+      if(best.score<70) return null; // low confidence — skip
+      return{lat:best.location.y, lon:best.location.x, name:best.attributes.Match_addr, quality:best.attributes.Addr_type};
+    }},
+    {name:'Nominatim', fn:async(q)=>{
+      const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1`,{headers:{'Accept-Language':'en','User-Agent':'RoadLocatorTool/1.0'}});
+      const d=await r.json();
+      if(!d.length) return null;
+      return{lat:parseFloat(d[0].lat), lon:parseFloat(d[0].lon), name:d[0].display_name, quality:d[0].type};
+    }},
+    {name:'Photon', fn:async(q)=>{
+      const r=await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1&lang=en`);
+      const d=await r.json();
+      if(!d.features?.length) return null;
+      const f=d.features[0]; const p=f.properties;
+      return{lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0], name:[p.housenumber,p.street,p.city,p.state].filter(Boolean).join(', ')||q, quality:p.type};
+    }},
+  ];
+  let geoResult=null, geoSource='';
+  for(const gc of geocoders){
+    setStatus(`Locating address via ${gc.name}…`);
+    try{const res=await gc.fn(addr); if(res){geoResult=res; geoSource=gc.name; break;}}
+    catch(e){continue;}
+  }
+  if(!geoResult){setStatus('Address not found. Try adding city and state, or check the spelling.','err');btn.classList.remove('loading');btn.disabled=false;return;}
+  setStatus(`Located via ${geoSource}: ${geoResult.name.split(',').slice(0,3).join(', ')}`);
+  await runSearch(geoResult.lat, geoResult.lon, geoResult.name);
+}
+
+async function copySummary() {
+  if(!lastSummary) return;
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(lastSummary);
+    copied = true;
+  } catch(e) {
+    // Fallback for browsers/contexts that block the Clipboard API
+    // (e.g. strict Permissions-Policy in embedded/sandboxed iframes)
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = lastSummary;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch(e2) { copied = false; }
+  }
+  if (!copied) { setStatus('Copy failed — please select and copy the text manually.', 'err'); return; }
+  const b=document.getElementById('copyBtn');
+  b.classList.add('copied');
+  b.innerHTML=`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M3 8l3.5 3.5L13 4"/></svg> Copied`;
+  setTimeout(()=>{b.classList.remove('copied');b.innerHTML=`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 011-1h8"/></svg> Copy`;},2200);
+}
+
+// Called when a direction pin is dragged to a new position
+function onDirPinDrop(k, marker) {
+  const {lat:pLat, lng:pLon} = marker.getLatLng();
+  const ways = window._lastWays || [];
+  const subLat = window._lastSubLat, subLon = window._lastSubLon;
+
+  // Find the nearest named road segment to the dropped position
+  let best = null, bestDist = Infinity;
+  for(const way of ways) {
+    const hw = way.tags?.highway;
+    if((RANK[hw]||99) > 25) continue;
+    const name = way.tags?.name||'', ref = way.tags?.ref||'';
+    if(!name && !ref) continue;
+    for(const pt of (way.geometry||[])) {
+      const d = dist(pLat, pLon, pt.lat, pt.lon);
+      if(d < bestDist) {
+        bestDist = d;
+        best = { hw, ref, wayName:name,
+          dist: subLat!=null ? dist(subLat,subLon,pt.lat,pt.lon) : 0,
+          lat:pt.lat, lon:pt.lon, rank:RANK[hw]||99, score:0 };
+      }
+    }
+  }
+
+  if(!best) return;
+
+  // Update the marker popup
+  const lbl = roadLabel(best);
+  const col = COLORS[best.hw]||'#8a8a8a';
+  marker.setPopupContent(`<b>${lbl}</b><br>${TYPE_LABEL[best.hw]||best.hw}<br>(manually repositioned)`);
+  marker.closePopup();
+
+  // Update the rm entry and refresh card + summary
+  const rm = window._lastRm || {};
+  rm[k] = best;
+  window._lastRm = rm;
+  updateCard(k, best);
+
+  // Re-attach the drag handler since updateCard re-renders innerHTML (losing it)
+  // We keep the marker reference in _dirMarkers so the handler persists
+
+  // Redraw the dashed line from subject to new pin position
+  if(subLat != null) {
+    // Remove old line for this direction — stored in _dirLines
+    window._dirLines = window._dirLines||{};
+    if(window._dirLines[k]) { leafMap.removeLayer(window._dirLines[k]); }
+    const line = L.polyline([[subLat,subLon],[pLat,pLon]],
+      {color:col,weight:1.5,dashArray:'6,5',opacity:0.55}).addTo(leafMap);
+    window._dirLines[k] = line;
+  }
+
+  // Update summary
+  const summary = buildSummary(rm);
+  if(summary) {
+    lastSummary = summary;
+    document.getElementById('summaryPlaceholder').style.display='none';
+    document.getElementById('summaryText').textContent = summary;
+    document.getElementById('summaryText').style.display='inline';
+    document.getElementById('copyRow').style.display='flex';
+  }
+}
+
+let pinModeActive=false;
+function togglePinMode(){
+  pinModeActive=!pinModeActive;
+  document.getElementById('mapPanel').classList.toggle('pin-mode',pinModeActive);
+  document.getElementById('pinBtn').classList.toggle('active',pinModeActive);
+  document.getElementById('pinBtn').textContent=pinModeActive?'✕ Cancel':'📍 Move pin';
+}
+
+async function onMapClick(e){
+  if(!pinModeActive) return;
+  const {lat:newLat,lng:newLon}=e.latlng;
+  // Exit pin mode
+  pinModeActive=false;
+  document.getElementById('mapPanel').classList.remove('pin-mode');
+  document.getElementById('pinBtn').classList.remove('active');
+  document.getElementById('pinBtn').textContent='📍 Move pin';
+  // Reverse geocode to get a display name
+  setStatus('Locating dropped pin…');
+  let newDisplay=`${newLat.toFixed(5)}, ${newLon.toFixed(5)}`;
+  try {
+    const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${newLat}&lon=${newLon}&format=json`,{headers:{'Accept-Language':'en','User-Agent':'RoadLocatorTool/1.0'}});
+    const d=await r.json();
+    if(d.display_name) newDisplay=d.display_name.split(',').slice(0,3).join(', ');
+  } catch(e){}
+  // Update address input to reflect the dropped pin location
+  document.getElementById('addr').value=newDisplay;
+  // Re-run road search from the new coordinates
+  await runSearch(newLat, newLon, newDisplay);
+}
+
+document.getElementById('addr').addEventListener('keydown',e=>{if(e.key==='Enter')lookup();});
+</script>
+<script>
+if(location.protocol==='file:'){
+  document.getElementById('fileBanner').style.display='block';
+}
+</script>
+</body>
+</html>
