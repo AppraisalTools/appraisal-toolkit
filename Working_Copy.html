@@ -424,6 +424,7 @@
         <option value="gaston">Gaston County</option>
         <option value="guilford">Guilford County</option>
         <option value="harnett">Harnett County</option>
+        <option value="hoke">Hoke County</option>
         <option value="iredell">Iredell County</option>
         <option value="johnston">Johnston County</option>
         <option value="mecklenburg">Mecklenburg County</option>
@@ -545,6 +546,15 @@
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">PID — Property Records <span style="color:var(--text-dim);font-size:9px;">(with or without spaces)</span></div>
           <input type="text" id="rl-harnett-pid" placeholder="XXXXXX XXXX XX or XXXXXXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- HOKE fields -->
+      <div id="rl-fields-hoke" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records</div>
+          <input type="text" id="rl-hoke-parcel" placeholder="XXXXXXXXXXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -982,6 +992,8 @@
 <iframe src="https://taxweb.iredellcountync.gov/PublicAccess/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://cama.harnett.org/ITSPublicHT/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://hokecountytaxes.munisselfservice.com/citizens/RealEstate/Default.aspx?mode=new"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://gastonnc.devnetwedge.com/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
@@ -1424,6 +1436,7 @@ const RL = (() => {
     forsyth:     { name: 'Forsyth County',     searchHint: 'Opens Forsyth County records — copy the REID and PIN into the fields below' },
     gaston:      { name: 'Gaston County',      searchHint: 'Opens Gaston County records — copy the parcel number into the field below' },
     harnett:     { name: 'Harnett County',     searchHint: 'Opens Harnett County records — copy the PIN and PID into the fields below' },
+    hoke:        { name: 'Hoke County',        searchHint: 'Opens Hoke County records — copy the parcel number into the field below' },
     iredell:     { name: 'Iredell County',     searchHint: 'Opens Iredell County records — copy the parcel number into the field below' },
     johnston:    { name: 'Johnston County',    searchHint: 'Opens Johnston County records — copy the PIN into the field below' },
     mecklenburg: { name: 'Mecklenburg County', searchHint: 'Opens Mecklenburg County Spatialest — search by address, then copy the PID into the field below' },
@@ -1471,6 +1484,9 @@ const RL = (() => {
     } else if (county === 'harnett') {
       window.open('https://cama.harnett.org/ITSPublicHT/', '_blank');
       setTimeout(() => window.open('https://gis.harnett.org/gisviewer/', '_blank'), 150);
+    } else if (county === 'hoke') {
+      window.open('https://hokecountytaxes.munisselfservice.com/citizens/RealEstate/Default.aspx?mode=new', '_blank');
+      setTimeout(() => window.open('https://maps.hokecounty.org/maps/', '_blank'), 150);
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
       setTimeout(() => window.open('https://iredellcountync.mapgeo.io/datasets/properties?abuttersDistance=100&latlng=35.782018%2C-80.88281&zoom=20', '_blank'), 150);
@@ -1505,6 +1521,7 @@ const RL = (() => {
     document.getElementById('rl-fields-gaston').style.display      = 'none';
     document.getElementById('rl-fields-guilford').style.display    = 'none';
     document.getElementById('rl-fields-harnett').style.display     = 'none';
+    document.getElementById('rl-fields-hoke').style.display        = 'none';
     document.getElementById('rl-fields-iredell').style.display     = 'none';
     document.getElementById('rl-fields-johnston').style.display    = 'none';
     document.getElementById('rl-fields-mecklenburg').style.display = 'none';
@@ -1566,6 +1583,8 @@ const RL = (() => {
       window.open('https://lrcpwa.ncptscloud.com/guilford/parcel-search', '_blank');
     } else if (county === 'harnett') {
       window.open('https://cama.harnett.org/ITSPublicHT/', '_blank');
+    } else if (county === 'hoke') {
+      window.open('https://hokecountytaxes.munisselfservice.com/citizens/RealEstate/Default.aspx?mode=new', '_blank');
     } else if (county === 'iredell') {
       window.open('https://taxweb.iredellcountync.gov/PublicAccess/', '_blank');
     } else if (county === 'johnston') {
@@ -1668,6 +1687,13 @@ const RL = (() => {
       urls = [ zillow, gmaps,
         `https://gis.harnett.org/gisviewer/?query=Parcels_5978_0%2CPIN%2C${encodeURIComponent(pin)}`,
         `https://cama.harnett.org/ITSPublicHT/AppraisalCard.aspx?id=${encodeHarnettPID(pid)}`
+      ];
+    } else if (county === 'hoke') {
+      const parcel = document.getElementById('rl-hoke-parcel').value.trim();
+      if (!parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://maps.hokecounty.org/maps/`,
+        `https://maps.hokecounty.org/HokeCountyTaxCards/Default.aspx?Id=${parcel}-`
       ];
     } else if (county === 'iredell') {
       const parcel = document.getElementById('rl-iredell-parcel').value.trim();
