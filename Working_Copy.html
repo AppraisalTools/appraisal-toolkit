@@ -1849,14 +1849,30 @@ const FLOOD = (() => {
       return Promise.race([promise, timeout]);
     }
 
+    // Validate that a response is actually parseable JSON before accepting it as
+    // a "successful" attempt. Some proxies return HTTP 200 with an HTML error,
+    // rate-limit, or captcha page as the body — res.ok alone doesn't catch that,
+    // and a later .json() call on it throws a confusing "Unexpected token '<'"
+    // error well after we've already committed to that attempt as the winner.
+    async function validateJson(res) {
+      if (!res.ok) throw new Error('bad response');
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('non-JSON response');
+      }
+      // Re-wrap as a Response-like object with a .json() that resolves to the
+      // already-parsed data, so callers can keep using `await res.json()` as-is.
+      return { ok: true, json: async () => data };
+    }
+
     const attempts = [
       withTimeout(fetch(url)),
       withTimeout(fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`)),
       withTimeout(fetch(`https://corsproxy.io/?url=${encodeURIComponent(url)}`)),
-    ].map(p => p.then(res => {
-      if (!res.ok) throw new Error('bad response');
-      return res;
-    }));
+    ].map(p => p.then(validateJson));
 
     // Race all three; if all fail, report the failure once everything has settled.
     return new Promise((resolve, reject) => {
