@@ -1900,38 +1900,14 @@ const FLOOD = (() => {
       const censusUrl = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=2020&format=json`;
       const geoRes  = await proxyFetch(censusUrl);
       const geoData = await geoRes.json();
-      let match = geoData?.result?.addressMatches?.[0];
-      let coordSource = 'Census';
-
-      // Census's TIGER/Line reference data updates on a slow batch cycle and can
-      // lag a year or more behind brand-new subdivisions/streets. If it comes back
-      // empty, fall back to Nominatim (OpenStreetMap) — free, no key required, and
-      // updated continuously rather than in periodic batches, so it often picks up
-      // newer residential streets faster.
-      let nomLat, nomLng, nomDisplay;
+      const match   = geoData?.result?.addressMatches?.[0];
       if (!match) {
-        status.textContent = '⏳ Not found in Census data, trying alternate geocoder…';
-        try {
-          const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&countrycodes=us&limit=1`;
-          const nomRes  = await proxyFetch(nomUrl);
-          const nomData = await nomRes.json();
-          if (nomData && nomData.length > 0) {
-            nomLat = nomData[0].lat;
-            nomLng = nomData[0].lon;
-            nomDisplay = nomData[0].display_name;
-            coordSource = 'OpenStreetMap';
-          }
-        } catch(e) { /* fall through to the not-found error below */ }
-      }
-
-      if (!match && !nomLat) {
         status.style.color = 'var(--danger)';
         status.textContent = '✗ Address not found — try adding city & state.';
         return;
       }
-      const lng = match ? match.coordinates.x : nomLng;
-      const lat = match ? match.coordinates.y : nomLat;
-      const matchedAddrLabel = match ? match.matchedAddress : nomDisplay;
+      const { x: lng, y: lat } = match.coordinates;
+      const matchedAddrLabel = match.matchedAddress;
       status.textContent = `⏳ Querying FEMA flood data…`;
 
       const femaZoneUrl  = `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28/query?geometry=${lng}%2C${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=FLD_ZONE%2CZONE_SUBTY&returnGeometry=false&f=json`;
@@ -2006,8 +1982,7 @@ const FLOOD = (() => {
       status.style.color = 'var(--accent2)';
       const matchedDfirm = panelFeature?.attributes?.DFIRM_ID?.trim();
       const dfirmNote = matchedDfirm ? ` (DFIRM ${matchedDfirm})` : '';
-      const sourceNote = coordSource !== 'Census' ? ` [via ${coordSource}]` : '';
-      status.textContent = `✓ ${matchedAddrLabel}${dfirmNote}${sourceNote}`;
+      status.textContent = `✓ ${matchedAddrLabel}${dfirmNote}`;
       results.style.display = 'block';
 
     } catch(err) {
