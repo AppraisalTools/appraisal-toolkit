@@ -672,6 +672,21 @@
     </div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;">Uses the address entered above — include city &amp; state for best results. Also auto-runs on Launch All.</div>
     <div id="flood-status" style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-height:18px;margin-bottom:8px;"></div>
+
+    <!-- Manual FEMA map number input for conversion without address -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:5px;">Manual FEMA Map # (skip address lookup)</div>
+        <input type="text" id="flood-manual-panel" placeholder="e.g. 3720077200K"
+          style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:8px 10px;outline:none;"
+          onkeydown="if(event.key==='Enter') FLOOD.convertManual()">
+      </div>
+      <button onclick="FLOOD.convertManual()"
+        style="align-self:flex-end;padding:8px 12px;background:transparent;border:1px solid var(--accent2);color:var(--accent2);font-family:var(--mono);font-size:10px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;">
+        ⇄ CONVERT
+      </button>
+    </div>
+    <div id="flood-manual-error" style="display:none;font-family:var(--mono);font-size:10px;color:var(--danger);margin-bottom:8px;"></div>
     <div id="flood-results" style="display:none;">
       <hr class="divider" style="margin:0 0 16px;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
@@ -2099,7 +2114,43 @@ const FLOOD = (() => {
     document.getElementById('corelogic-final').textContent = finalNumber;
   }
 
-  return { lookup, copyOne, convertCoreLogic, proxyFetch };
+  function convertManual() {
+    const raw = (document.getElementById('flood-manual-panel').value || '').trim().toUpperCase().replace(/\s+/g, '');
+    const errBox = document.getElementById('flood-manual-error');
+    errBox.style.display = 'none';
+
+    if (!raw) {
+      errBox.textContent = '⚠ Enter a FEMA Map Number first (e.g. 3720077200K).';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    // Fill the hidden MSC input and trigger the conversion using the launcher's county
+    const mscInput = document.getElementById('corelogic-msc-input');
+    if (mscInput) mscInput.value = raw;
+
+    // Auto-select county from launcher dropdown
+    populateCountySelect();
+    const countySel   = document.getElementById('corelogic-county');
+    const launcherSlug = document.getElementById('rl-county-select')?.value;
+    const launcherName = LAUNCHER_COUNTY_NAMES[launcherSlug];
+    if (countySel && launcherName) countySel.value = launcherName;
+
+    // Show results area so corelogic-final is visible
+    document.getElementById('flood-results').style.display = 'block';
+
+    // Run the conversion
+    convertCoreLogic();
+
+    // Clear any previous flood status to avoid confusion
+    const errConv = document.getElementById('corelogic-error');
+    if (errConv && errConv.style.display !== 'none') {
+      errBox.textContent = errConv.textContent;
+      errBox.style.display = 'block';
+    }
+  }
+
+  return { lookup, copyOne, convertCoreLogic, convertManual, proxyFetch };
 })();
 </script>
 </body>
