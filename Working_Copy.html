@@ -417,6 +417,7 @@
         <option value="">— Select County —</option>
         <option value="alamance">Alamance County</option>
         <option value="cabarrus">Cabarrus County</option>
+        <option value="catawba">Catawba County</option>
         <option value="chatham">Chatham County</option>
         <option value="cumberland">Cumberland County</option>
         <option value="durham">Durham County</option>
@@ -473,6 +474,20 @@
         <div style="margin-bottom:24px;">
           <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — Property Records &amp; GIS <span style="color:var(--text-dim);font-size:9px;">(14-digit)</span></div>
           <input type="text" id="rl-cabarrus-parcel" placeholder="XXXXXXXXXXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+      </div>
+
+      <!-- CATAWBA fields -->
+      <div id="rl-fields-catawba" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">REID — Property Records <span style="color:var(--text-dim);font-size:9px;">(6-digit)</span></div>
+          <input type="text" id="rl-catawba-reid" placeholder="XXXXXX"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
+        </div>
+        <div style="margin-bottom:24px;">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Parcel Number — GIS &amp; Property Report <span style="color:var(--text-dim);font-size:9px;">(12-digit)</span></div>
+          <input type="text" id="rl-catawba-parcel" placeholder="XXXXXXXXXXXX"
             style="background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:11px 12px;outline:none;width:100%;">
         </div>
       </div>
@@ -986,6 +1001,8 @@
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://tax.cabarruscounty.us/BasicSearch.aspx"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
+<iframe src="https://taxbill.catawbacountync.gov/ITSPublicCT/"
+  style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://property.spatialest.com/nc/mecklenburg/#/"
   style="width:1px;height:1px;border:none;opacity:0;position:absolute;pointer-events:none;"></iframe>
 <iframe src="https://property.spatialest.com/nc/alamance#/"
@@ -1432,6 +1449,7 @@ const RL = (() => {
   const COUNTIES = {
     alamance:    { name: 'Alamance County',    searchHint: 'Opens Alamance County Spatialest — search by address, then copy the parcel into the field below' },
     cabarrus:    { name: 'Cabarrus County',    searchHint: 'Opens Cabarrus County records — copy the parcel number into the field below' },
+    catawba:     { name: 'Catawba County',     searchHint: 'Opens Catawba County records — copy the REID and parcel into the fields below' },
     chatham:     { name: 'Chatham County',     searchHint: 'Opens Chatham County records — copy the parcel number into the field below' },
     cumberland:  { name: 'Cumberland County',  searchHint: 'Opens Cumberland County records pre-filled — copy the REID into the field below' },
     durham:      { name: 'Durham County',      searchHint: 'Opens Durham County property search pre-filled — copy the REID into the field below' },
@@ -1465,6 +1483,9 @@ const RL = (() => {
     } else if (county === 'cabarrus') {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
       setTimeout(() => window.open('https://location.cabarruscounty.us/mapcabarrus/', '_blank'), 150);
+    } else if (county === 'catawba') {
+      window.open('https://taxbill.catawbacountync.gov/ITSPublicCT/', '_blank');
+      setTimeout(() => window.open('https://gis.catawbacountync.gov/parcel/', '_blank'), 150);
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
       setTimeout(() => window.open('https://gisservices.chathamcountync.gov/landinformation/', '_blank'), 150);
@@ -1516,6 +1537,7 @@ const RL = (() => {
   function onCountyChange(value) {
     document.getElementById('rl-fields-alamance').style.display     = 'none';
     document.getElementById('rl-fields-cabarrus').style.display    = 'none';
+    document.getElementById('rl-fields-catawba').style.display     = 'none';
     document.getElementById('rl-fields-chatham').style.display     = 'none';
     document.getElementById('rl-fields-cumberland').style.display  = 'none';
     document.getElementById('rl-fields-durham').style.display      = 'none';
@@ -1571,6 +1593,8 @@ const RL = (() => {
       window.open('https://property.spatialest.com/nc/alamance#/', '_blank');
     } else if (county === 'cabarrus') {
       window.open('https://tax.cabarruscounty.us/BasicSearch.aspx', '_blank');
+    } else if (county === 'catawba') {
+      window.open('https://taxbill.catawbacountync.gov/ITSPublicCT/', '_blank');
     } else if (county === 'chatham') {
       window.open('https://chathamnc.devnetwedge.com/', '_blank');
     } else if (county === 'cumberland') {
@@ -1639,6 +1663,15 @@ const RL = (() => {
       urls = [ zillow, gmaps,
         `https://location.cabarruscounty.us/mapcabarrus/?pin=${parcel}`,
         `https://tax.cabarruscounty.us/AppraisalCard.aspx?Parcel=${parcel}`
+      ];
+    } else if (county === 'catawba') {
+      const reid   = document.getElementById('rl-catawba-reid').value.trim();
+      const parcel = document.getElementById('rl-catawba-parcel').value.trim();
+      if (!reid || !parcel) { err.style.display = 'block'; success.style.display = 'none'; return; }
+      urls = [ zillow, gmaps,
+        `https://gis.catawbacountync.gov/parcel/?pinc=${parcel}`,
+        `https://gis.catawbacountync.gov/nomap/parcel_report_h.php?key=${parcel}&typ=P`,
+        `https://taxbill.catawbacountync.gov/itspublicct/AppraisalCard.aspx?id=${reid}`
       ];
     } else if (county === 'chatham') {
       const parcel = document.getElementById('rl-chatham-parcel').value.trim();
@@ -1847,7 +1880,7 @@ const FLOOD = (() => {
 
   // Maps the main launcher's county dropdown slugs to the NC_COUNTIES key names
   const LAUNCHER_COUNTY_NAMES = {
-    alamance: 'Alamance', cabarrus: 'Cabarrus', chatham: 'Chatham', cumberland: 'Cumberland',
+    alamance: 'Alamance', cabarrus: 'Cabarrus', catawba: 'Catawba', chatham: 'Chatham', cumberland: 'Cumberland',
     durham: 'Durham', forsyth: 'Forsyth', gaston: 'Gaston', guilford: 'Guilford',
     harnett: 'Harnett', hoke: 'Hoke', iredell: 'Iredell', johnston: 'Johnston', mecklenburg: 'Mecklenburg',
     nash: 'Nash', orange: 'Orange', rowan: 'Rowan', wake: 'Wake',
