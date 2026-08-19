@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Appraisal Toolkit</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root {
     --bg: #0f1117;
@@ -204,6 +205,199 @@
   }
 
   /* ══════════════════════════════════
+     CONTRACT ANALYZER PANEL
+  ══════════════════════════════════ */
+  #panel-contract .ctrl-bar {
+    display: flex; gap: 8px; margin-bottom: 10px; align-items: center;
+  }
+  #panel-contract .ctrl-group {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px;
+  }
+  #panel-contract .ctrl-group.key-group { flex: 0 0 auto; min-width: 260px; }
+  #panel-contract .ctrl-group.addr-group { flex: 1; }
+  #panel-contract .ctrl-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-label); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+  }
+  #panel-contract .ctrl-input {
+    flex: 1; background: transparent; border: none; color: var(--text);
+    font-family: var(--mono); font-size: 12px; outline: none; min-width: 0;
+  }
+  #panel-contract .ctrl-input::placeholder { color: var(--text-dim); }
+  #panel-contract .ca-api-status {
+    font-size: 10px; font-family: var(--mono); white-space: nowrap; flex-shrink: 0;
+  }
+  #panel-contract .ca-api-status.ok { color: var(--accent2); }
+  #panel-contract .ca-api-status.missing { color: var(--text-dim); }
+
+  #panel-contract .upload-row {
+    display: flex; gap: 8px; margin-bottom: 10px; align-items: stretch;
+  }
+  #panel-contract .ca-upload-zone {
+    flex: 1; border: 1px dashed var(--border); border-radius: 8px;
+    padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; position: relative;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--surface); min-height: 44px;
+  }
+  #panel-contract .ca-upload-zone:hover,
+  #panel-contract .ca-upload-zone.drag-over {
+    border-color: var(--accent); background: rgba(74,158,255,0.04);
+  }
+  #panel-contract .ca-upload-zone.has-file {
+    border-color: var(--accent2); background: rgba(91,200,160,0.04); border-style: solid;
+  }
+  #panel-contract .ca-upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  #panel-contract .ca-upload-hint {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    margin-left: auto; opacity: 0.6; flex-shrink: 0;
+  }
+  #panel-contract .ca-upload-text {
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em;
+  }
+  #panel-contract .ca-upload-text.has-file { color: var(--accent2); }
+
+  #panel-contract .ca-analyze-btn {
+    flex-shrink: 0; padding: 0 24px; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; font-family: var(--mono); font-size: 11px;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    transition: background 0.18s, opacity 0.18s; white-space: nowrap; min-height: 44px;
+  }
+  #panel-contract .ca-analyze-btn:hover { background: #3a8eef; }
+  #panel-contract .ca-analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #panel-contract .ca-progress-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; margin-bottom: 10px; display: none;
+  }
+  #panel-contract .ca-progress-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text-label);
+    margin-bottom: 7px; letter-spacing: 0.08em;
+  }
+  #panel-contract .ca-progress-track {
+    width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  #panel-contract .ca-progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px; transition: width 0.3s ease; width: 0%;
+  }
+
+  #panel-contract .ca-error-box {
+    background: rgba(224,85,85,0.1); border: 1px solid rgba(224,85,85,0.3);
+    border-radius: 8px; padding: 10px 16px; font-family: var(--mono);
+    font-size: 12px; color: var(--danger); margin-bottom: 10px; display: none;
+  }
+
+  #panel-contract .ca-results-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+  }
+  #panel-contract .ca-results-title {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--accent); text-transform: uppercase;
+  }
+  #panel-contract .ca-results-actions { display: flex; gap: 6px; align-items: center; }
+
+  #panel-contract .ca-copy-all-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-label); font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 11px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  #panel-contract .ca-copy-all-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #panel-contract .ca-reset-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px;
+    padding: 5px 11px; cursor: pointer; letter-spacing: 0.08em;
+    text-transform: uppercase; transition: all 0.18s;
+  }
+  #panel-contract .ca-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  #panel-contract .ca-result-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  #panel-contract .ca-row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #panel-contract .ca-row-full { display: grid; grid-template-columns: 1fr; }
+
+  #panel-contract .ca-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+    transition: border-color 0.18s;
+  }
+  #panel-contract .ca-card:hover { border-color: var(--border-active); }
+  #panel-contract .ca-card.match    { border-left: 3px solid var(--accent2); }
+  #panel-contract .ca-card.mismatch { border-left: 3px solid var(--danger); }
+  #panel-contract .ca-card.neutral  { border-left: 3px solid var(--border-active); }
+  #panel-contract .ca-card.warn     { border-left: 3px solid var(--warn); }
+
+  #panel-contract .ca-card-top {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  #panel-contract .ca-field-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--text-label); text-transform: uppercase;
+  }
+  #panel-contract .ca-card-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #panel-contract .ca-badge {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+  }
+  #panel-contract .badge-match    { background: rgba(91,200,160,0.15); color: var(--accent2); }
+  #panel-contract .badge-mismatch { background: rgba(224,85,85,0.15); color: var(--danger); }
+  #panel-contract .badge-found    { background: rgba(74,158,255,0.12); color: var(--accent); }
+  #panel-contract .badge-missing  { background: rgba(122,132,154,0.15); color: var(--text-dim); }
+  #panel-contract .badge-warn     { background: rgba(232,162,64,0.15); color: var(--warn); }
+
+  #panel-contract .ca-copy-field-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-dim); font-size: 10px; padding: 2px 7px; cursor: pointer;
+    font-family: var(--mono); transition: all 0.15s; white-space: nowrap;
+  }
+  #panel-contract .ca-copy-field-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #panel-contract .ca-value {
+    font-size: 13px; color: var(--text); line-height: 1.5;
+  }
+  #panel-contract .ca-value.not-found {
+    color: var(--text-dim); font-style: italic; font-size: 12px;
+  }
+  #panel-contract .ca-note { font-size: 11px; color: var(--warn); font-family: var(--mono); }
+
+  #panel-contract .ca-raw-toggle {
+    background: transparent; border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding: 5px 11px;
+    cursor: pointer; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: all 0.18s; margin-bottom: 8px;
+  }
+  #panel-contract .ca-raw-toggle:hover { border-color: var(--border-active); color: var(--text); }
+  #panel-contract .ca-raw-output {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    white-space: pre-wrap; line-height: 1.6; display: none; margin-bottom: 16px;
+  }
+  #panel-contract .ca-results-panel { display: none; }
+
+  #panel-contract .ca-cost-strip {
+    display: none; align-items: center; gap: 10px; margin-top: 14px;
+    padding: 7px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+  #panel-contract .ca-cost-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-dim); text-transform: uppercase;
+  }
+  #panel-contract .ca-cost-value {
+    font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent2);
+  }
+  #panel-contract .ca-cost-reset {
+    background: transparent; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding: 2px 7px;
+    cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase;
+    transition: all 0.15s; margin-left: auto;
+  }
+  #panel-contract .ca-cost-reset:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ══════════════════════════════════
      TOOL 1 — WEIGHTED RECONCILIATION
   ══════════════════════════════════ */
   #panel-wrec { max-width: 800px; }
@@ -386,6 +580,9 @@
   </button>
   <button class="tab-btn" onclick="switchTab('boundaries', this)">
     <span class="tab-icon">🗺</span>Neighborhood Boundaries
+  </button>
+  <button class="tab-btn" onclick="switchTab('contract', this)">
+    <span class="tab-icon">📄</span>Contract Analyzer
   </button>
   <button class="tab-btn" onclick="switchTab('wrec', this)">
     <span class="tab-icon">⚖</span>Weighted Reconciliation
@@ -1054,10 +1251,73 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════
+     PANEL — CONTRACT ANALYZER
+═══════════════════════════════════════ -->
+<div class="panel" id="panel-contract">
+  <div class="panel-header">
+    <div class="panel-title">Purchase Contract Analyzer</div>
+    <div class="panel-subtitle">Upload a purchase contract PDF — extracts key fields for appraisal review.</div>
+  </div>
+
+  <!-- API Key + Subject Address -->
+  <div class="ctrl-bar">
+    <div class="ctrl-group key-group">
+      <span class="ctrl-label">API Key</span>
+      <input type="password" class="ctrl-input" id="ca-apiKey" placeholder="sk-ant-..." oninput="CA.updateApiStatus()" />
+      <span class="ca-api-status missing" id="ca-apiStatus">Not set</span>
+    </div>
+    <div class="ctrl-group addr-group">
+      <span class="ctrl-label">Subject</span>
+      <input type="text" class="ctrl-input" id="ca-subjectAddress" placeholder="123 Main St, City, NC 12345" />
+    </div>
+  </div>
+
+  <!-- Upload + Analyze Row -->
+  <div class="upload-row">
+    <div class="ca-upload-zone" id="ca-dropZone">
+      <input type="file" id="ca-fileInput" accept=".pdf" onchange="CA.handleFile(this.files[0])" />
+      <span style="font-size:16px;flex-shrink:0;opacity:0.7;">📄</span>
+      <span class="ca-upload-text" id="ca-uploadText">Drop PDF here or click to browse</span>
+      <span class="ca-upload-hint">PDF only</span>
+    </div>
+    <button class="ca-analyze-btn" id="ca-analyzeBtn" onclick="CA.analyze()" disabled>
+      Analyze Contract
+    </button>
+  </div>
+
+  <!-- Progress -->
+  <div class="ca-progress-wrap" id="ca-progressWrap">
+    <div class="ca-progress-label" id="ca-progressLabel">Reading PDF pages...</div>
+    <div class="ca-progress-track"><div class="ca-progress-fill" id="ca-progressFill"></div></div>
+  </div>
+
+  <!-- Error -->
+  <div class="ca-error-box" id="ca-errorBox"></div>
+
+  <!-- Results -->
+  <div class="ca-results-panel" id="ca-resultsPanel">
+    <div class="ca-results-header">
+      <span class="ca-results-title">Extracted Contract Data</span>
+      <div class="ca-results-actions">
+        <button class="ca-copy-all-btn" onclick="CA.copyAll()">Copy All Fields</button>
+        <button class="ca-reset-btn" onclick="CA.resetTool()">New Contract</button>
+      </div>
+    </div>
+    <div class="ca-result-grid" id="ca-resultGrid"></div>
+    <button class="ca-raw-toggle" onclick="CA.toggleRaw()">Show Raw Response</button>
+    <div class="ca-raw-output" id="ca-rawOutput"></div>
+  </div>
+
+  <!-- Cost Strip -->
+  <div class="ca-cost-strip" id="ca-costStrip">
+    <span class="ca-cost-label">Session Cost:</span>
+    <span class="ca-cost-value" id="ca-totalCost">$0.0000</span>
+    <button class="ca-cost-reset" onclick="CA.resetCosts()">Reset</button>
+  </div>
+</div>
+
 <script>
-/* ════════════════════════════
-   TAB SWITCHING
-════════════════════════════ */
 function switchTab(id, btn) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -2151,6 +2411,334 @@ const FLOOD = (() => {
   }
 
   return { lookup, copyOne, convertCoreLogic, convertManual, proxyFetch };
+})();
+
+/* ════════════════════════════
+   CONTRACT ANALYZER (CA)
+════════════════════════════ */
+const CA = (() => {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  let currentFile = null;
+  const COST_PER_M_INPUT = 3.00;
+  const COST_PER_M_OUTPUT = 15.00;
+  let session = { inputTokens: 0, outputTokens: 0 };
+
+  // Drag & drop
+  const dropZone = document.getElementById('ca-dropZone');
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type === 'application/pdf') handleFile(f);
+  });
+
+  function handleFile(file) {
+    if (!file) return;
+    currentFile = file;
+    const txt = document.getElementById('ca-uploadText');
+    txt.textContent = '📎 ' + file.name;
+    txt.classList.add('has-file');
+    dropZone.classList.add('has-file');
+    updateAnalyzeBtn();
+  }
+
+  function updateApiStatus() {
+    const key = document.getElementById('ca-apiKey').value.trim();
+    const status = document.getElementById('ca-apiStatus');
+    if (key.startsWith('sk-ant-') && key.length > 20) {
+      status.textContent = '✓ Ready';
+      status.className = 'ca-api-status ok';
+    } else {
+      status.textContent = 'Not set';
+      status.className = 'ca-api-status missing';
+    }
+    updateAnalyzeBtn();
+  }
+
+  function updateAnalyzeBtn() {
+    const key = document.getElementById('ca-apiKey').value.trim();
+    document.getElementById('ca-analyzeBtn').disabled = !(key.startsWith('sk-ant-') && key.length > 20 && currentFile);
+  }
+
+  function setProgress(pct, label) {
+    document.getElementById('ca-progressFill').style.width = pct + '%';
+    document.getElementById('ca-progressLabel').textContent = label;
+  }
+
+  function calcCost(i, o) { return (i / 1_000_000 * COST_PER_M_INPUT) + (o / 1_000_000 * COST_PER_M_OUTPUT); }
+
+  function updateCostMeter(inputTok, outputTok) {
+    session.inputTokens += inputTok;
+    session.outputTokens += outputTok;
+    document.getElementById('ca-totalCost').textContent = '$' + calcCost(session.inputTokens, session.outputTokens).toFixed(4);
+    document.getElementById('ca-costStrip').style.display = 'flex';
+  }
+
+  function resetCosts() {
+    session = { inputTokens: 0, outputTokens: 0 };
+    document.getElementById('ca-totalCost').textContent = '$0.0000';
+    document.getElementById('ca-costStrip').style.display = 'none';
+  }
+
+  async function pdfToImages(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const totalPages = pdf.numPages;
+    const images = [];
+    const MAX_PX = 1800;
+    for (let i = 1; i <= totalPages; i++) {
+      setProgress(10 + Math.round((i / totalPages) * 40), `Rendering page ${i} of ${totalPages}...`);
+      const page = await pdf.getPage(i);
+      const baseViewport = page.getViewport({ scale: 1.0 });
+      const scale = Math.min(2.0, MAX_PX / Math.max(baseViewport.width, baseViewport.height));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      images.push(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+    }
+    return images;
+  }
+
+  async function analyze() {
+    const apiKey = document.getElementById('ca-apiKey').value.trim();
+    const subjectAddr = document.getElementById('ca-subjectAddress').value.trim();
+
+    document.getElementById('ca-errorBox').style.display = 'none';
+    document.getElementById('ca-resultsPanel').style.display = 'none';
+    document.getElementById('ca-progressWrap').style.display = 'block';
+    document.getElementById('ca-analyzeBtn').disabled = true;
+    setProgress(5, 'Loading PDF...');
+
+    try {
+      const images = await pdfToImages(currentFile);
+      setProgress(55, `Sending ${images.length} page(s) to Claude...`);
+
+      const addrLine = subjectAddr
+        ? `The appraiser's subject property address is: "${subjectAddr}". Compare this to the contract address and note whether they match.`
+        : 'No subject address was provided — skip the address match check.';
+
+      const systemPrompt = `You are a real estate contract analyst assisting a licensed real estate appraiser.
+Your job is to read purchase contracts (NC or SC standard forms, or custom builder contracts) and extract specific fields with clean, minimal output.
+Always respond with a valid JSON object only. No markdown, no explanation outside the JSON.`;
+
+      const userPrompt = `Analyze this purchase contract and extract the following fields.
+${addrLine}
+
+Return ONLY a JSON object with exactly these keys:
+
+{
+  "contract_address": "Full property address as written in the contract",
+  "address_match": "YES" | "NO" | "PARTIAL" | "UNABLE TO VERIFY",
+  "address_note": "Brief note only if mismatch or issue, otherwise null",
+  "buyer_names": "Full name(s) of buyer(s)/borrower(s)",
+  "seller_names": "Full name(s) of seller(s)",
+  "sale_price": "Purchase price as dollar amount only, e.g. $350,000",
+  "contract_date": "Latest signature date found — this is the binding date",
+  "contract_date_note": "e.g. 'Buyer signed 6/1, Seller signed 6/3 — using 6/3' — or null if only one date",
+  "deposits": "List each deposit as: $[amount] [type]. Example: '$500 Due Diligence. $2,500 Earnest Money.' If single deposit with no label, just: '$15,000 Deposit'. Nothing else.",
+  "seller_concessions": "Dollar amount(s) only. If multiple, list each on its own line as '$X,XXX [label]' then final line 'Total: $X,XXX'. If none, say 'None'. No other explanation.",
+  "home_warranty": "If a home warranty is offered or included, state the dollar amount only, e.g. '$450 Home Warranty'. If not mentioned, say 'None'.",
+  "loan_type": "One word only: Conventional, FHA, VA, USDA, or Cash. Nothing else.",
+  "personal_property": "List only the item names included in the sale, comma-separated. Strip all legal language, timing, location, and cost descriptions — just the items. Example: 'Refrigerator, Washer, Dryer, Riding Lawn Mower'. If none listed, say 'None'.",
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "confidence_note": "Note any fields that were unclear, ambiguous, or hard to read — or null"
+}
+
+Rules:
+- Deposits: just type and amount, no extra commentary.
+- Seller concessions: search for any language where seller/builder contributes money to buyer — seller concessions, seller incentives, buyer closing costs, closing cost assistance, towards buyer costs, towards closing costs, builder incentives. Dollar amount(s) only.
+- Home warranty: check separately from concessions. Common values $300–$900.
+- Loan type: one word only. If not stated, use "Not Specified".
+- Personal property: item names only, no legal descriptions.
+- Contract date: use the LATEST signature date.
+- If a field is not present, use null.`;
+
+      const contentArray = [{ type: 'text', text: userPrompt }];
+      for (let i = 0; i < images.length; i++) {
+        contentArray.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: images[i] } });
+      }
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: contentArray }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || `API error ${response.status}`);
+      }
+
+      setProgress(90, 'Processing results...');
+      const data = await response.json();
+      const rawText = data.content.find(b => b.type === 'text')?.text || '';
+      document.getElementById('ca-rawOutput').textContent = rawText;
+      updateCostMeter(data.usage?.input_tokens || 0, data.usage?.output_tokens || 0);
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText.replace(/```json|```/g, '').trim());
+      } catch (e) {
+        throw new Error('Could not parse response as JSON. See raw response below.');
+      }
+
+      setProgress(100, 'Done!');
+      setTimeout(() => {
+        document.getElementById('ca-progressWrap').style.display = 'none';
+        renderResults(parsed, subjectAddr);
+      }, 400);
+
+    } catch (err) {
+      document.getElementById('ca-progressWrap').style.display = 'none';
+      const eb = document.getElementById('ca-errorBox');
+      eb.textContent = '⚠ ' + err.message;
+      eb.style.display = 'block';
+      document.getElementById('ca-analyzeBtn').disabled = false;
+    }
+  }
+
+  function renderResults(d, subjectAddr) {
+    const grid = document.getElementById('ca-resultGrid');
+    grid.innerHTML = '';
+
+    const am = (d.address_match || '').toUpperCase();
+    let addrBadge = am === 'YES'     ? { t:'Match',    c:'badge-match' }
+                  : am === 'NO'      ? { t:'Mismatch', c:'badge-mismatch' }
+                  : am === 'PARTIAL' ? { t:'Partial',  c:'badge-warn' }
+                  :                    { t:'Check',    c:'badge-missing' };
+    let addrCls = am === 'YES' ? 'match' : am === 'NO' ? 'mismatch' : am === 'PARTIAL' ? 'warn' : 'neutral';
+    if (!subjectAddr) { addrBadge = { t:'No Verify', c:'badge-missing' }; addrCls = 'neutral'; }
+
+    const vb  = v => (v && v !== 'null') ? { t:'Found', c:'badge-found' } : { t:'Missing', c:'badge-missing' };
+    const cb  = v => (!v || v === 'null') ? { t:'Missing', c:'badge-missing' }
+                   : v.toLowerCase() === 'none' ? { t:'None', c:'badge-found' } : { t:'Found', c:'badge-found' };
+
+    function copyVal(v, isNum) {
+      if (!v || v === 'null') return '';
+      if (!isNum) return v;
+      if (v.includes('Total:')) { const m = v.match(/Total:\s*\$?([\d,]+)/i); if (m) return m[1]; }
+      return v.replace(/^\$/, '').trim();
+    }
+
+    function makeCard(label, value, badge, cls, note, isNum) {
+      const card = document.createElement('div');
+      card.className = 'ca-card ' + (cls || 'neutral');
+      const dv = value && value !== 'null' ? value : null;
+      const cv = copyVal(dv, isNum);
+      const sl = label.replace(/'/g, "\\'");
+      const sc = (cv || '').replace(/`/g, "'").replace(/\\/g, '\\\\');
+      card.innerHTML = `
+        <div class="ca-card-top">
+          <span class="ca-field-label">${label}</span>
+          <div class="ca-card-right">
+            <span class="ca-badge ${badge.c}">${badge.t}</span>
+            ${dv ? `<button class="ca-copy-field-btn" onclick="CA.copyField(\`${sc}\`)">Copy</button>` : ''}
+          </div>
+        </div>
+        <div class="ca-value ${dv ? '' : 'not-found'}">${dv || 'Not found'}</div>
+        ${note ? `<div class="ca-note">⚑ ${note}</div>` : ''}`;
+      return card;
+    }
+
+    function full(label, val, badge, cls, note, isNum) {
+      const row = document.createElement('div');
+      row.className = 'ca-row-full';
+      row.appendChild(makeCard(label, val, badge, cls, note, isNum));
+      grid.appendChild(row);
+    }
+
+    function pair(a, b) {
+      const row = document.createElement('div');
+      row.className = 'ca-row-pair';
+      row.appendChild(makeCard(a.l, a.v, a.b, a.c, a.n, a.num));
+      row.appendChild(makeCard(b.l, b.v, b.b, b.c, b.n, b.num));
+      grid.appendChild(row);
+    }
+
+    full('Property Address', d.contract_address, addrBadge, addrCls, d.address_note, false);
+    full('Buyer / Borrower', d.buyer_names, vb(d.buyer_names), d.buyer_names ? 'neutral' : 'warn', null, false);
+    full('Seller', d.seller_names, vb(d.seller_names), d.seller_names ? 'neutral' : 'warn', null, false);
+    pair(
+      { l:'Sale Price',    v:d.sale_price,    b:vb(d.sale_price),    c:d.sale_price    ? 'neutral':'warn', n:null,                num:true },
+      { l:'Contract Date', v:d.contract_date, b:vb(d.contract_date), c:d.contract_date ? 'neutral':'warn', n:d.contract_date_note, num:false }
+    );
+    pair(
+      { l:'Loan Type', v:d.loan_type, b:vb(d.loan_type), c:d.loan_type ? 'neutral':'warn', n:null, num:false },
+      { l:'Deposits',  v:d.deposits,  b:vb(d.deposits),  c:d.deposits  ? 'neutral':'warn', n:null, num:true  }
+    );
+    pair(
+      { l:'Seller Concessions / Incentives', v:d.seller_concessions, b:cb(d.seller_concessions), c:'neutral', n:null, num:true },
+      { l:'Home Warranty',                   v:d.home_warranty,      b:cb(d.home_warranty),      c:'neutral', n:null, num:true }
+    );
+    full('Personal Property Conveyed', d.personal_property, vb(d.personal_property), 'neutral', null, false);
+
+    if (d.confidence_note) {
+      const note = document.createElement('div');
+      note.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--warn);padding:6px 2px;';
+      note.textContent = '⚑ Confidence: ' + d.confidence + ' — ' + d.confidence_note;
+      grid.appendChild(note);
+    }
+
+    document.getElementById('ca-resultsPanel').style.display = 'block';
+    document.getElementById('ca-analyzeBtn').disabled = false;
+  }
+
+  function copyField(value) { navigator.clipboard.writeText(value); }
+
+  function copyAll() {
+    const lines = [];
+    document.querySelectorAll('#ca-resultGrid .ca-card').forEach(card => {
+      const label = card.querySelector('.ca-field-label')?.innerText || '';
+      const value = card.querySelector('.ca-value')?.innerText || '';
+      if (label) lines.push(label + ': ' + value);
+    });
+    navigator.clipboard.writeText(lines.join('\n'));
+    const btn = document.querySelector('#panel-contract .ca-copy-all-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy All Fields', 1800);
+  }
+
+  function toggleRaw() {
+    const raw = document.getElementById('ca-rawOutput');
+    const btn = document.querySelector('#panel-contract .ca-raw-toggle');
+    const showing = raw.style.display === 'block';
+    raw.style.display = showing ? 'none' : 'block';
+    btn.textContent = showing ? 'Show Raw Response' : 'Hide Raw Response';
+  }
+
+  function resetTool() {
+    currentFile = null;
+    document.getElementById('ca-fileInput').value = '';
+    const txt = document.getElementById('ca-uploadText');
+    txt.textContent = 'Drop PDF here or click to browse';
+    txt.classList.remove('has-file');
+    dropZone.classList.remove('has-file');
+    document.getElementById('ca-subjectAddress').value = '';
+    document.getElementById('ca-resultsPanel').style.display = 'none';
+    document.getElementById('ca-errorBox').style.display = 'none';
+    document.getElementById('ca-progressWrap').style.display = 'none';
+    document.getElementById('ca-rawOutput').style.display = 'none';
+    document.querySelector('#panel-contract .ca-raw-toggle').textContent = 'Show Raw Response';
+    updateAnalyzeBtn();
+  }
+
+  return { handleFile, updateApiStatus, analyze, copyField, copyAll, toggleRaw, resetTool, resetCosts };
 })();
 </script>
 </body>
