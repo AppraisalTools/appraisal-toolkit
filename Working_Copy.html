@@ -318,6 +318,7 @@
 
   #panel-contract .ca-result-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
   #panel-contract .ca-row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  #panel-contract .ca-row-triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   #panel-contract .ca-row-full { display: grid; grid-template-columns: 1fr; }
 
   #panel-contract .ca-card {
@@ -2544,6 +2545,7 @@ Return ONLY a JSON object with exactly these keys:
   "deposits": "List each deposit as: $[amount] [type]. Example: '$500 Due Diligence. $2,500 Earnest Money.' If single deposit with no label, just: '$15,000 Deposit'. Nothing else.",
   "seller_concessions": "Dollar amount(s) only. If multiple, list each on its own line as '$X,XXX [label]' then final line 'Total: $X,XXX'. If none, say 'None'. No other explanation.",
   "home_warranty": "If a home warranty is offered or included, state the dollar amount only, e.g. '$450 Home Warranty'. If not mentioned, say 'None'.",
+  "hoa_fee": "If an HOA fee is mentioned, state as '$[amount] [period]' where period is Monthly, Quarterly, or Annual. Example: '$125 Monthly' or '$600 Annual'. If not mentioned, say 'None'.",
   "loan_type": "One word only: Conventional, FHA, VA, USDA, or Cash. Nothing else.",
   "personal_property": "List only the item names included in the sale, comma-separated. Strip all legal language, timing, location, and cost descriptions — just the items. Example: 'Refrigerator, Washer, Dryer, Riding Lawn Mower'. If none listed, say 'None'.",
   "confidence": "HIGH" | "MEDIUM" | "LOW",
@@ -2554,6 +2556,7 @@ Rules:
 - Deposits: just type and amount, no extra commentary.
 - Seller concessions: search for any language where seller/builder contributes money to buyer — seller concessions, seller incentives, buyer closing costs, closing cost assistance, towards buyer costs, towards closing costs, builder incentives. Dollar amount(s) only.
 - Home warranty: check separately from concessions. Common values $300–$900.
+- HOA fee: look for homeowner association, HOA, or community fees. State amount and period only.
 - Loan type: one word only. If not stated, use "Not Specified".
 - Personal property: item names only, no legal descriptions.
 - Contract date: use the LATEST signature date.
@@ -2671,12 +2674,22 @@ Rules:
       grid.appendChild(row);
     }
 
+    function triple(a, b, c) {
+      const row = document.createElement('div');
+      row.className = 'ca-row-triple';
+      row.appendChild(makeCard(a.l, a.v, a.b, a.c, a.n, a.num));
+      row.appendChild(makeCard(b.l, b.v, b.b, b.c, b.n, b.num));
+      row.appendChild(makeCard(c.l, c.v, c.b, c.c, c.n, c.num));
+      grid.appendChild(row);
+    }
+
     full('Property Address', d.contract_address, addrBadge, addrCls, d.address_note, false);
     full('Buyer / Borrower', d.buyer_names, vb(d.buyer_names), d.buyer_names ? 'neutral' : 'warn', null, false);
     full('Seller', d.seller_names, vb(d.seller_names), d.seller_names ? 'neutral' : 'warn', null, false);
-    pair(
-      { l:'Sale Price',    v:d.sale_price,    b:vb(d.sale_price),    c:d.sale_price    ? 'neutral':'warn', n:null,                num:true },
-      { l:'Contract Date', v:d.contract_date, b:vb(d.contract_date), c:d.contract_date ? 'neutral':'warn', n:d.contract_date_note, num:false }
+    triple(
+      { l:'Sale Price',    v:d.sale_price,    b:vb(d.sale_price),    c:d.sale_price    ? 'neutral':'warn', n:null,                 num:true  },
+      { l:'Contract Date', v:d.contract_date, b:vb(d.contract_date), c:d.contract_date ? 'neutral':'warn', n:d.contract_date_note, num:false },
+      { l:'HOA Fee',       v:d.hoa_fee,       b:cb(d.hoa_fee),       c:'neutral',                         n:null,                 num:true  }
     );
     pair(
       { l:'Loan Type', v:d.loan_type, b:vb(d.loan_type), c:d.loan_type ? 'neutral':'warn', n:null, num:false },
