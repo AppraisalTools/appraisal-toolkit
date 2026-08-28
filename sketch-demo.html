@@ -189,9 +189,10 @@
 
   function resize(){
     const wrap=cv.parentElement; W=wrap.clientWidth; H=wrap.clientHeight;
-    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); draw();
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); refreshView(); draw();
   }
   window.addEventListener('resize',resize);
+  if(window.ResizeObserver){new ResizeObserver(()=>resize()).observe(cv.parentElement);}
 
   /* ---------------- geometry helpers ---------------- */
   function polygonArea(ring){
@@ -223,6 +224,7 @@
   }
   const toScreen=(v,p)=>({X:v.cx+p.x*v.s,Y:v.cy-p.y*v.s});
   function screenToFeet(px,py){return{x:(px-view.cx)/view.s,y:(view.cy-py)/view.s};}
+  function refreshView(){view=computeView(W,H,46);}
 
   /* ---------------- command vocab ---------------- */
   const DIRS={up:[0,1],north:[0,1],n:[0,1],forward:[0,1],top:[0,1],
@@ -378,8 +380,8 @@
   }
 
   /* ---------------- rendering ---------------- */
-  function renderSketch(g,w,h,opt){
-    const v=computeView(w,h,opt.pad||46);
+  function renderSketch(g,w,h,opt,vw){
+    const v=vw||computeView(w,h,opt.pad||46);
     if(opt.bg){g.fillStyle=opt.bg;g.fillRect(0,0,w,h);}
     if(opt.grid)drawGrid(g,w,h);
     // completed sections
@@ -443,7 +445,7 @@
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-    view=renderSketch(ctx,W,H,{grid:true,live:true,pad:46});
+    renderSketch(ctx,W,H,{grid:true,live:true,pad:46},view);
     // readout
     const last=commands.filter(c=>c.kind==='move').slice(-1)[0];
     $('rHead').textContent=last?last.text:'—';
@@ -492,7 +494,7 @@
     f.innerHTML=boxes.join('');
   }
 
-  function afterUpdate(){draw();renderLog();renderSections();renderFooter();}
+  function afterUpdate(){refreshView();draw();renderLog();renderSections();renderFooter();}
 
   /* ---------------- modes + canvas clicks ---------------- */
   function setMode(m){
@@ -506,10 +508,56 @@
   }
   document.querySelectorAll('.modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 
+  // map a pointer event to feet, correcting for any canvas display/bitmap size difference
+  function eventToFeet(e){
+    const r=cv.getBoundingClientRect();
+    const px=(e.clientX-r.left)*(W/(r.width||W));
+    const py=(e.clientY-r.top)*(H/(r.height||H));
+    return screenToFeet(px,py);
+  }
+  function pointInPolygon(pt,poly){
+    let inside=false;
+    for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+      const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;
+      if(((yi>pt.y)!==(yj>pt.y))&&(pt.x<(xj-xi)*(pt.y-yi)/(yj-yi)+xi))inside=!inside;
+    }
+    return inside;
+  }
+  function hitTest(f){
+    ctx.font='700 14px "Space Grotesk",sans-serif';
+    for(let i=roomLabels.length-1;i>=0;i--){
+      const l=roomLabels[i];const halfW=ctx.measureText(l.text).width/2+7;
+      if(Math.abs(f.x-l.x)*view.s<=halfW&&Math.abs(f.y-l.y)*view.s<=12)return{type:'label',id:l.id};
+    }
+    for(let i=sections.length-1;i>=0;i--){if(pointInPolygon(f,sections[i].verts))return{type:'section',id:sections[i].id};}
+    return null;
+  }
+  let drag=null,dragMoved=false;
+  cv.addEventListener('pointerdown',e=>{
+    if(mode!=='draw')return;
+    const hit=hitTest(eventToFeet(e));
+    if(hit){drag={...hit,last:eventToFeet(e)};dragMoved=false;
+      cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';e.preventDefault();}
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!drag){if(mode==='draw')cv.style.cursor=hitTest(eventToFeet(e))?'grab':'';return;}
+    const f=eventToFeet(e);const dx=f.x-drag.last.x,dy=f.y-drag.last.y;drag.last=f;
+    if(dx||dy)dragMoved=true;
+    if(drag.type==='label'){const l=roomLabels.find(x=>x.id===drag.id);if(l){l.x+=dx;l.y+=dy;}}
+    else{const s=sections.find(x=>x.id===drag.id);if(s)s.verts.forEach(p=>{p.x+=dx;p.y+=dy;});}
+    draw();
+  });
+  function endDrag(e){
+    if(!drag)return; const moved=dragMoved; drag=null;dragMoved=false;cv.style.cursor='';
+    try{cv.releasePointerCapture(e.pointerId);}catch(_){}
+    if(moved)afterUpdate();     // reframe so a moved item stays in view
+  }
+  cv.addEventListener('pointerup',endDrag);
+  cv.addEventListener('pointercancel',endDrag);
+
   cv.addEventListener('click',e=>{
     if(mode==='draw')return;
-    const r=cv.getBoundingClientRect();
-    const pt=screenToFeet(e.clientX-r.left,e.clientY-r.top);
+    const pt=eventToFeet(e);
     if(mode==='setstart'){
       cur={verts:[{x:pt.x,y:pt.y}],pen:{x:pt.x,y:pt.y},active:true};
       commands.push({kind:'move',text:'start corner set'});
