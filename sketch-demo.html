@@ -19,12 +19,16 @@
   body{background:var(--graphite);color:var(--text-on-dark);
     font-family:"Space Grotesk",system-ui,sans-serif;
     display:flex;flex-direction:column;height:100dvh;overflow:hidden}
-  header{display:flex;align-items:baseline;gap:12px;padding:11px 16px 9px;
+  header{display:flex;align-items:center;gap:6px;padding:8px 14px;
     border-bottom:1px solid var(--line);flex:0 0 auto}
-  header .mark{font-weight:700;letter-spacing:-.02em;font-size:18px;display:flex;align-items:center;gap:8px}
-  header .mark .dot{width:9px;height:9px;background:var(--pen);border-radius:2px;transform:rotate(45deg)}
-  header .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
+  header .dot{width:9px;height:9px;background:var(--pen);border-radius:2px;transform:rotate(45deg);margin-right:6px}
+  header .tab{background:none;border:none;color:var(--muted);font-family:inherit;font-weight:700;
+    font-size:16px;letter-spacing:-.01em;cursor:pointer;padding:6px 4px;position:relative}
+  header .tab.active{color:var(--text-on-dark)}
+  header .tab.active::after{content:"";position:absolute;left:4px;right:4px;bottom:-9px;height:2px;background:var(--pen)}
+  header .tag{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:3px}
+  .view{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
   main{flex:1 1 auto;display:flex;min-height:0}
   .stage{flex:1 1 auto;position:relative;min-width:0;display:flex;flex-direction:column;background:var(--graphite-2)}
   .canvas-wrap{flex:1 1 auto;position:relative;overflow:hidden}
@@ -115,13 +119,44 @@
   .stat .v small{font-size:11px;color:var(--muted);font-weight:500}
   .stat .sub{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5}
   .stat .sub b{color:var(--text-on-dark);font-weight:700}
+  /* voice notes view */
+  #viewNotes{display:none}
+  .notes-wrap{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;padding:16px;gap:12px;max-width:820px;width:100%;margin:0 auto}
+  .notes-bar{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .note-mic{border:none;border-radius:9px;padding:14px 20px;cursor:pointer;font-family:inherit;
+    font-weight:700;font-size:15px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:10px;
+    transition:background .15s,transform .05s;flex:0 0 auto}
+  .note-mic:active{transform:scale(.99)}
+  .note-mic.rec{background:var(--pen);animation:pulse2 1.4s ease-in-out infinite}
+  .note-mic svg{width:18px;height:18px}
+  @keyframes pulse2{0%,100%{box-shadow:0 0 0 0 rgba(228,87,46,.5)}50%{box-shadow:0 0 0 9px rgba(228,87,46,0)}}
+  .note-status{flex:1;min-width:160px;font-size:13px;color:var(--muted);line-height:1.5}
+  .interim{min-height:20px;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--live);
+    font-style:italic;padding:0 2px}
+  #noteText{flex:1 1 auto;min-height:0;resize:none;background:var(--paper);color:#1b1e23;
+    border:1px solid var(--line);border-radius:10px;padding:16px;font-family:"Space Grotesk",sans-serif;
+    font-size:16px;line-height:1.6}
+  #noteText:focus{outline:none;border-color:var(--ink-soft)}
+  .notes-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .notes-foot input{background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
+    border-radius:7px;padding:9px 11px;font-family:"JetBrains Mono",monospace;font-size:13px;width:150px}
+  .notes-foot input:focus{outline:none;border-color:var(--ink-soft)}
+  .notes-foot .ext{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--muted);margin-left:-4px}
+  .notes-foot .spacer{flex:1}
+  .notes-foot button{background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
+    border-radius:7px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer}
+  .notes-foot button:active{background:var(--line)}
+  .notes-foot button.dl{background:var(--ink);border-color:var(--ink-soft);color:#fff;font-weight:700}
 </style>
 </head>
 <body>
 <header>
-  <div class="mark"><span class="dot"></span>FieldSketch</div>
-  <span class="tag">Voice Sketch · Demo</span>
+  <span class="dot"></span>
+  <button class="tab active" data-view="sketch">FieldSketch</button>
+  <button class="tab" data-view="notes">Voice Notes</button>
+  <span class="tag">Demo</span>
 </header>
+<div id="viewSketch" class="view">
 <main>
   <section class="stage">
     <div class="canvas-wrap">
@@ -165,7 +200,6 @@
       <button id="undo">Undo</button>
       <button id="clear">Clear</button>
       <button id="fit">Fit</button>
-      <button class="demo" id="sample">Sample</button>
       <button class="export" id="export">Export PNG</button>
     </div>
     <div class="hint">
@@ -177,6 +211,29 @@
   </aside>
 </main>
 <footer id="footer"></footer>
+</div>
+
+<section id="viewNotes" class="view">
+  <div class="notes-wrap">
+    <div class="notes-bar">
+      <button class="note-mic" id="noteMic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <span id="noteMicLabel">Start dictation</span>
+      </button>
+      <div class="note-status" id="noteStatus">Press start, then just talk. Your words appear below and keep going until you stop.</div>
+    </div>
+    <div class="interim" id="noteInterim"></div>
+    <textarea id="noteText" placeholder="Your transcript appears here. You can also type or edit it directly before downloading."></textarea>
+    <div class="notes-foot">
+      <input id="noteName" value="field-notes" spellcheck="false" autocomplete="off">
+      <span class="ext">.txt</span>
+      <div class="spacer"></div>
+      <button id="noteCopy">Copy</button>
+      <button id="noteClear">Clear</button>
+      <button class="dl" id="noteDownload">Download</button>
+    </div>
+  </div>
+</section>
 
 <script>
 (function(){
@@ -652,19 +709,6 @@
     sections=[];roomLabels=[];cur={verts:[],pen:null,active:false};commands=[];pendingLabelPoint=null;
     setMode('draw');afterUpdate();$('heard').textContent='Cleared. Ready for a new sketch.';
   };
-  $('sample').onclick=()=>{
-    sections=[];roomLabels=[];cur={verts:[],pen:null,active:false};commands=[];pendingLabelPoint=null;
-    // First floor 40 x 30
-    sections.push({id:uid(),verts:[{x:0,y:0},{x:0,y:30},{x:40,y:30},{x:40,y:0}],area:1200,category:'First Floor'});
-    // Garage 22 x 22 to the right, aligned to bottom
-    sections.push({id:uid(),verts:[{x:44,y:0},{x:44,y:22},{x:66,y:22},{x:66,y:0}],area:484,category:'Garage'});
-    roomLabels.push({id:uid(),x:12,y:9,text:'Living Room'});
-    roomLabels.push({id:uid(),x:30,y:22,text:'Kitchen'});
-    roomLabels.push({id:uid(),x:55,y:11,text:'2 Car Garage'});
-    commands.push({kind:'section',text:'sample scene loaded'});
-    setMode('draw');afterUpdate();
-    $('heard').innerHTML='Loaded a sample: <b>First Floor + 2 Car Garage</b>. Check the sq-ft boxes below.';
-  };
   $('export').onclick=exportPNG;
   $('fit').onclick=()=>{autoFit=true;refreshView();draw();$('heard').textContent='View reset to fit.';};
 
@@ -762,6 +806,55 @@
   }
   grabEl.addEventListener('pointerup',endHandle);
   grabEl.addEventListener('pointercancel',endHandle);
+
+  /* ---------------- tabs ---------------- */
+  const viewSketch=$('viewSketch'),viewNotes=$('viewNotes');
+  function showView(v){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+    viewSketch.style.display=v==='sketch'?'flex':'none';
+    viewNotes.style.display=v==='notes'?'flex':'none';
+    if(v==='sketch'){requestAnimationFrame(resize);}else{stopNotes();}
+  }
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+
+  /* ---------------- voice notes ---------------- */
+  const noteText=$('noteText'),noteInterim=$('noteInterim'),noteStatus=$('noteStatus'),
+        noteMic=$('noteMic'),noteMicLabel=$('noteMicLabel');
+  let noteRec=null,notesOn=false;
+  if(SR){
+    noteRec=new SR();noteRec.lang='en-US';noteRec.interimResults=true;noteRec.continuous=true;
+    noteRec.onresult=e=>{let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
+        if(r.isFinal)appendNote(r[0].transcript);else interim+=r[0].transcript;}
+      noteInterim.textContent=interim;};
+    noteRec.onend=()=>{if(notesOn){try{noteRec.start();}catch(_){}}};   // auto-restart so long notes don't cut off
+    noteRec.onerror=e=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){notesOn=false;setNoteUI();
+        noteStatus.textContent='Microphone blocked — allow mic access, then press Start again.';}
+    };
+  }else{noteMic.disabled=true;noteMic.style.opacity=.55;noteMicLabel.textContent='Voice not supported';
+    noteStatus.textContent='This browser has no speech engine — you can still type notes here and download them (Chrome/Android work best for dictation).';}
+
+  function appendNote(chunk){chunk=chunk.trim();if(!chunk)return;
+    let t=noteText.value;if(t&&!/\s$/.test(t))t+=' ';
+    noteText.value=t+chunk;noteText.scrollTop=noteText.scrollHeight;}
+  function setNoteUI(){noteMic.classList.toggle('rec',notesOn);
+    noteMicLabel.textContent=notesOn?'Stop dictation':'Start dictation';
+    if(notesOn)noteStatus.textContent='Listening… speak naturally. It keeps going through pauses until you press stop.';
+    if(!notesOn)noteInterim.textContent='';}
+  function startNotes(){if(!noteRec||notesOn)return;notesOn=true;try{noteRec.start();}catch(_){}setNoteUI();}
+  function stopNotes(){if(!notesOn)return;notesOn=false;try{noteRec.stop();}catch(_){}setNoteUI();
+    noteStatus.textContent='Stopped. Edit the text above if needed, then Download.';}
+  noteMic.onclick=()=>{notesOn?stopNotes():startNotes();};
+  $('noteClear').onclick=()=>{noteText.value='';noteInterim.textContent='';noteText.focus();};
+  $('noteCopy').onclick=async()=>{try{await navigator.clipboard.writeText(noteText.value);
+      noteStatus.textContent='Copied to clipboard.';}catch(_){noteText.select();noteStatus.textContent='Selected — press Ctrl/Cmd+C to copy.';}};
+  $('noteDownload').onclick=()=>{
+    const name=($('noteName').value.trim()||'field-notes').replace(/[^\w\-]+/g,'-');
+    const blob=new Blob([noteText.value],{type:'text/plain'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=name+'.txt';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    noteStatus.textContent='Downloaded '+name+'.txt';};
 
   /* ---------------- init ---------------- */
   resize();afterUpdate();
