@@ -147,6 +147,14 @@
     border-radius:7px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer}
   .notes-foot button:active{background:var(--line)}
   .notes-foot button.dl{background:var(--ink);border-color:var(--ink-soft);color:#fff;font-weight:700}
+  .fmt-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .fmt-lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{background:var(--graphite-2);border:none;color:var(--muted);font-family:inherit;
+    font-size:12px;font-weight:600;padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:var(--ink);color:#fff}
+  .fmt-hint{font-size:11px;color:var(--muted);font-style:italic}
 </style>
 </head>
 <body>
@@ -221,6 +229,15 @@
         <span id="noteMicLabel">Start dictation</span>
       </button>
       <div class="note-status" id="noteStatus">Press start, then just talk. Your words appear below and keep going until you stop.</div>
+    </div>
+    <div class="fmt-row">
+      <span class="fmt-lbl">Format</span>
+      <div class="seg" id="fmtSeg">
+        <button data-fmt="off">Plain</button>
+        <button data-fmt="bullet" class="on">• Bullets</button>
+        <button data-fmt="number">1. Numbered</button>
+      </div>
+      <span class="fmt-hint">say “next” for a new point</span>
     </div>
     <div class="interim" id="noteInterim"></div>
     <textarea id="noteText" placeholder="Your transcript appears here. You can also type or edit it directly before downloading."></textarea>
@@ -844,9 +861,32 @@
   }else{noteMic.disabled=true;noteMic.style.opacity=.55;noteMicLabel.textContent='Voice not supported';
     noteStatus.textContent='This browser has no speech engine — you can still type notes here and download them (Chrome/Android work best for dictation).';}
 
-  function appendNote(chunk){chunk=chunk.trim();if(!chunk)return;
-    let t=noteText.value;if(t&&!/\s$/.test(t))t+=' ';
-    noteText.value=t+chunk;noteText.scrollTop=noteText.scrollHeight;}
+  let listMode='bullet';   // 'off' | 'bullet' | 'number'
+  document.querySelectorAll('#fmtSeg button').forEach(b=>b.onclick=()=>{
+    listMode=b.dataset.fmt;
+    document.querySelectorAll('#fmtSeg button').forEach(x=>x.classList.toggle('on',x===b));
+  });
+  // a spoken "next" / "new point" starts a fresh item
+  const BREAK_RE=/\b(?:next(?:\s+(?:point|item|line|one))?|new\s+(?:point|bullet|line))\b/i;
+  function prefixFor(n){return listMode==='number'?(n+'. '):listMode==='bullet'?'\u2022 ':'';}
+  function startItemIfEmpty(){if(listMode!=='off'&&noteText.value.trim()===''){noteText.value=prefixFor(1);}}
+  function newItem(){
+    let v=noteText.value.replace(/[ \t]+$/,'');
+    const lines=v?v.split('\n'):[];
+    noteText.value=(v?v+'\n':'')+prefixFor(lines.length+1);
+  }
+  function appendWords(seg){
+    seg=seg.trim();if(!seg)return;
+    startItemIfEmpty();
+    let v=noteText.value;
+    if(v&&!/\s$/.test(v))v+=' ';
+    noteText.value=v+seg;
+  }
+  function appendNote(chunk){
+    chunk=chunk.trim();if(!chunk)return;
+    chunk.split(BREAK_RE).forEach((seg,i)=>{if(i>0)newItem();appendWords(seg);});
+    noteText.scrollTop=noteText.scrollHeight;
+  }
   function setNoteUI(){noteMic.classList.toggle('rec',notesOn);
     noteMicLabel.textContent=notesOn?'Stop dictation':'Start dictation';
     if(notesOn)noteStatus.textContent='Listening… speak naturally. It keeps going through pauses until you press stop.';
