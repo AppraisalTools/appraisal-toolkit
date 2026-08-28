@@ -9,128 +9,104 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --graphite:#1b1e23;
-    --graphite-2:#23272e;
-    --paper:#f4f1e8;
-    --grid:#d8d2c2;
-    --grid-strong:#c4bda8;
-    --ink:#14293f;
-    --ink-soft:#2f4a63;
-    --pen:#e4572e;
-    --live:#2a9d8f;
-    --line:#3a3f47;
-    --muted:#8b9199;
-    --text-on-dark:#e9e6dd;
+    --graphite:#1b1e23; --graphite-2:#23272e;
+    --paper:#f4f1e8; --ink:#14293f; --ink-soft:#2f4a63;
+    --pen:#e4572e; --live:#2a9d8f; --amber:#d99a2b; --slate:#6a7686;
+    --line:#3a3f47; --muted:#8b9199; --text-on-dark:#e9e6dd;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
-  body{
-    background:var(--graphite);
-    color:var(--text-on-dark);
+  body{background:var(--graphite);color:var(--text-on-dark);
     font-family:"Space Grotesk",system-ui,sans-serif;
-    display:flex;flex-direction:column;height:100dvh;overflow:hidden;
-  }
-  header{
-    display:flex;align-items:baseline;gap:12px;
-    padding:12px 16px 10px;border-bottom:1px solid var(--line);
-    flex:0 0 auto;
-  }
-  header .mark{
-    font-weight:700;letter-spacing:-.02em;font-size:18px;
-    display:flex;align-items:center;gap:8px;
-  }
+    display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:baseline;gap:12px;padding:11px 16px 9px;
+    border-bottom:1px solid var(--line);flex:0 0 auto}
+  header .mark{font-weight:700;letter-spacing:-.02em;font-size:18px;display:flex;align-items:center;gap:8px}
   header .mark .dot{width:9px;height:9px;background:var(--pen);border-radius:2px;transform:rotate(45deg)}
-  header .tag{
-    font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
-    padding:2px 7px;border-radius:3px;
-  }
+  header .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:2px 7px;border-radius:3px}
   main{flex:1 1 auto;display:flex;min-height:0}
-  .stage{
-    flex:1 1 auto;position:relative;min-width:0;
-    display:flex;flex-direction:column;background:var(--graphite-2);
-  }
+  .stage{flex:1 1 auto;position:relative;min-width:0;display:flex;flex-direction:column;background:var(--graphite-2)}
   .canvas-wrap{flex:1 1 auto;position:relative;overflow:hidden}
   canvas{display:block;width:100%;height:100%;touch-action:none}
-  .readout{
-    position:absolute;top:12px;left:12px;
-    font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.7;
-    background:rgba(20,41,63,.85);color:#dfe8ef;padding:8px 11px;border-radius:5px;
-    border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(2px);pointer-events:none;
-  }
+  canvas.aim{cursor:crosshair}
+  .readout{position:absolute;top:12px;left:12px;font-family:"JetBrains Mono",monospace;
+    font-size:11px;line-height:1.7;background:rgba(20,41,63,.85);color:#dfe8ef;
+    padding:7px 11px;border-radius:5px;border:1px solid rgba(255,255,255,.08);pointer-events:none}
   .readout b{color:#fff;font-weight:700}
-  .readout .area{color:var(--live)}
-  .side{
-    flex:0 0 320px;background:var(--graphite);border-left:1px solid var(--line);
-    display:flex;flex-direction:column;min-height:0;
-  }
-  .voice{padding:14px 16px;border-bottom:1px solid var(--line)}
-  .mic-btn{
-    width:100%;border:none;border-radius:8px;padding:14px;cursor:pointer;
-    font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.01em;
-    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
-    transition:background .15s,transform .05s;
-  }
+  .banner{position:absolute;top:12px;left:50%;transform:translateX(-50%);
+    background:var(--live);color:#06231f;font-weight:700;font-size:12px;
+    padding:7px 14px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none}
+  .side{flex:0 0 330px;background:var(--graphite);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;min-height:0;overflow-y:auto}
+  .voice{padding:13px 16px;border-bottom:1px solid var(--line)}
+  .mic-btn{width:100%;border:none;border-radius:8px;padding:13px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:15px;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s,transform .05s}
   .mic-btn:active{transform:scale(.99)}
   .mic-btn.listening{background:var(--live);animation:pulse 1.4s ease-in-out infinite}
   .mic-btn svg{width:18px;height:18px}
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(42,157,143,.5)}50%{box-shadow:0 0 0 8px rgba(42,157,143,0)}}
-  .heard{
-    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);
-    margin-top:10px;min-height:16px;
-  }
+  .heard{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);margin-top:9px;min-height:16px;line-height:1.4}
   .heard b{color:var(--text-on-dark)}
-  .type-row{display:flex;gap:8px;margin-top:12px}
-  .type-row input{
-    flex:1;background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
-    border-radius:7px;padding:11px 12px;font-family:"JetBrains Mono",monospace;font-size:13px;
-  }
+  .type-row{display:flex;gap:8px;margin-top:11px}
+  .type-row input{flex:1;background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
+    border-radius:7px;padding:11px 12px;font-family:"JetBrains Mono",monospace;font-size:13px}
   .type-row input:focus{outline:none;border-color:var(--ink-soft)}
-  .type-row button{
-    background:var(--ink-soft);border:none;color:#fff;border-radius:7px;padding:0 15px;
-    font-family:inherit;font-weight:700;cursor:pointer;font-size:14px;
-  }
-  .type-row button:active{background:var(--ink)}
-  .log-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:12px 16px 6px;
-  }
-  .log-head h2{
-    margin:0;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
-    text-transform:uppercase;color:var(--muted);font-weight:500;
-  }
-  .log{
-    flex:1 1 auto;overflow-y:auto;padding:0 16px 12px;
-    font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.55;
-  }
-  .log .entry{padding:6px 0;border-bottom:1px dashed var(--line);display:flex;gap:9px}
-  .log .entry .n{color:var(--muted);min-width:20px}
+  .type-row button{background:var(--ink-soft);border:none;color:#fff;border-radius:7px;padding:0 15px;font-weight:700;cursor:pointer}
+  .modes{display:flex;gap:6px;margin-top:11px}
+  .modes button{flex:1;background:var(--graphite-2);border:1px solid var(--line);color:var(--muted);
+    border-radius:7px;padding:9px 4px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px}
+  .modes button svg{width:15px;height:15px}
+  .modes button.active{background:var(--ink);color:#fff;border-color:var(--ink-soft)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 5px}
+  .panel-head h2{margin:0;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);font-weight:500}
+  .log{max-height:120px;overflow-y:auto;padding:0 16px 8px;
+    font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.5}
+  .log .entry{padding:5px 0;border-bottom:1px dashed var(--line);display:flex;gap:8px}
+  .log .entry .n{color:var(--muted);min-width:18px}
   .log .entry.move .cmd{color:var(--text-on-dark)}
+  .log .entry.close .cmd{color:var(--pen)}
   .log .entry.label .cmd{color:var(--live)}
-  .log .entry.error .cmd{color:var(--pen)}
-  .log .empty{color:var(--muted);padding:14px 0;font-style:italic}
-  .toolbar{
-    display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap;
-  }
-  .toolbar button{
-    flex:1;min-width:70px;background:var(--graphite-2);border:1px solid var(--line);
-    color:var(--text-on-dark);border-radius:7px;padding:9px;font-family:inherit;
-    font-size:12px;font-weight:500;cursor:pointer;
-  }
+  .log .entry.section .cmd{color:var(--amber)}
+  .log .entry.error .cmd{color:#e4572e;opacity:.8}
+  .log .empty,.sections .empty{color:var(--muted);padding:10px 0;font-style:italic}
+  .sections{padding:0 16px 8px}
+  .sec-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .sec-row .sw{width:11px;height:11px;border-radius:2px;flex:0 0 auto}
+  .sec-row .meta{flex:1;min-width:0}
+  .sec-row .meta .t{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sec-row .meta .a{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+  .sec-row select{background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
+    border-radius:6px;padding:5px;font-family:inherit;font-size:11px;max-width:118px}
+  .sec-row .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 4px}
+  .toolbar{display:flex;gap:7px;padding:11px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .toolbar button{flex:1;min-width:66px;background:var(--graphite-2);border:1px solid var(--line);
+    color:var(--text-on-dark);border-radius:7px;padding:9px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
   .toolbar button:active{background:var(--line)}
   .toolbar button.demo{color:var(--live);border-color:var(--ink-soft)}
-  .hint{
-    padding:8px 16px 14px;font-size:11px;color:var(--muted);line-height:1.5;
-    border-top:1px solid var(--line);
-  }
+  .toolbar button.export{color:var(--amber);border-color:#5a4a25}
+  .hint{padding:9px 16px 16px;font-size:11px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line)}
   .hint code{color:var(--text-on-dark);background:var(--graphite-2);padding:1px 5px;border-radius:3px;font-family:"JetBrains Mono",monospace}
-  /* mobile */
-  @media (max-width:760px){
+  footer{flex:0 0 auto;display:flex;gap:10px;padding:10px 14px;border-top:1px solid var(--line);
+    background:var(--graphite);overflow-x:auto}
+  .stat{flex:0 0 auto;min-width:130px;background:var(--graphite-2);border:1px solid var(--line);
+    border-radius:8px;padding:9px 12px}
+  .stat.gla{border-color:var(--ink-soft);min-width:170px}
+  .stat .k{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-size:21px;font-weight:700;letter-spacing:-.01em;margin-top:2px}
+  .stat.gla .v{color:#fff}
+  .stat .v small{font-size:11px;color:var(--muted);font-weight:500}
+  .stat .sub{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .stat .sub b{color:var(--text-on-dark);font-weight:700}
+  @media (max-width:820px){
     main{flex-direction:column}
-    .side{flex:0 0 auto;border-left:none;border-top:1px solid var(--line);max-height:52dvh}
-    .stage{flex:1 1 auto}
-    .log{max-height:22dvh}
+    .side{flex:0 0 auto;border-left:none;border-top:1px solid var(--line);max-height:48dvh}
+    .stage{flex:1 1 auto;min-height:34dvh}
     .hint{display:none}
+    .stat .v{font-size:18px}
   }
 </style>
 </head>
@@ -144,10 +120,10 @@
     <div class="canvas-wrap">
       <canvas id="cv"></canvas>
       <div class="readout" id="readout">
-        <div>heading <b id="rHead">—</b></div>
-        <div>perimeter <b id="rPerim">0.0 ft</b></div>
-        <div class="area" id="rAreaLine" style="display:none">area <b id="rArea">—</b></div>
+        <div>current wall <b id="rHead">—</b></div>
+        <div>open perimeter <b id="rPerim">0.0 ft</b></div>
       </div>
+      <div class="banner" id="banner"></div>
     </div>
   </section>
   <aside class="side">
@@ -158,363 +134,494 @@
       </button>
       <div class="heard" id="heard">Tap and speak a command…</div>
       <div class="type-row">
-        <input id="typeIn" placeholder="or type: 15.2 feet up" autocomplete="off" spellcheck="false">
+        <input id="typeIn" placeholder="or type a command…" autocomplete="off" spellcheck="false">
         <button id="typeGo">Run</button>
       </div>
+      <div class="modes">
+        <button id="mDraw" class="active" data-mode="draw">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>Draw</button>
+        <button id="mStart" data-mode="setstart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg>Set&nbsp;Start</button>
+        <button id="mLabel" data-mode="label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 12.3l-7.9 7.9a2 2 0 0 1-2.8 0l-6.1-6.1a2 2 0 0 1 0-2.8l7.9-7.9a2 2 0 0 1 1.4-.6H18a2 2 0 0 1 2 2v5.8a2 2 0 0 1-.6 1.4z"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/></svg>Label</button>
+      </div>
     </div>
-    <div class="log-head"><h2>Field Log</h2></div>
+
+    <div class="panel-head"><h2>Field Log</h2></div>
     <div class="log" id="log"><div class="empty">No commands yet.</div></div>
+
+    <div class="panel-head"><h2>Sections</h2></div>
+    <div class="sections" id="sections"><div class="empty">Close a shape to add a section.</div></div>
+
     <div class="toolbar">
       <button id="undo">Undo</button>
       <button id="clear">Clear</button>
-      <button class="demo" id="sample">Run sample room</button>
+      <button class="demo" id="sample">Sample</button>
+      <button class="export" id="export">Export PNG</button>
     </div>
     <div class="hint">
-      Say or type: <code>15.2 feet up</code>, <code>20 right</code>, then <code>label Kitchen</code>. Chain them with commas. Directions: up/down/left/right or N/S/E/W.
+      <b>Draw:</b> say <code>15.2 feet up</code>, <code>20 right</code>. Finish a box with <code>close left</code> / <code>close down</code> (no number needed).<br>
+      <b>Set Start:</b> click the canvas to drop a starting corner.<br>
+      <b>Label:</b> click a spot, then say a room like <code>Primary Bedroom</code>.<br>
+      <b>Describe a section:</b> after it closes, say <code>First Floor</code> / <code>Garage</code> or pick it in the list.
     </div>
   </aside>
 </main>
+<footer id="footer"></footer>
 
 <script>
 (function(){
   "use strict";
+  const $=id=>document.getElementById(id);
+  const uid=()=>Math.random().toString(36).slice(2,8);
 
-  // ---------- state ----------
-  // Path is a list of vertices in "feet" space. Start at origin.
-  let verts = [{x:0,y:0}];         // in feet; y+ is up (north)
-  let labels = [];                 // {x,y,text} centroid labels for closed rooms, plus freehand
-  let commands = [];               // {kind, text, ok}
-  let pen = {x:0,y:0};             // current pen position in feet
+  /* ---------------- state ---------------- */
+  let sections=[];                 // {id, verts:[{x,y}] closed ring (no dup), area, category}
+  let roomLabels=[];               // {id,x,y,text}
+  let cur={verts:[],pen:null,active:false};   // in-progress path (verts[0]=start)
+  let commands=[];                 // log entries
+  let mode='draw';                 // draw | setstart | label
+  let pendingLabelPoint=null;      // {x,y} awaiting label text
+  let view={s:10,cx:0,cy:0};       // last on-screen transform (CSS px)
 
-  const cv = document.getElementById('cv');
-  const ctx = cv.getContext('2d');
+  const cv=$('cv'), ctx=cv.getContext('2d');
   let W=0,H=0,DPR=Math.max(1,window.devicePixelRatio||1);
 
   function resize(){
-    const wrap = cv.parentElement;
-    W = wrap.clientWidth; H = wrap.clientHeight;
-    cv.width = W*DPR; cv.height = H*DPR;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    draw();
+    const wrap=cv.parentElement; W=wrap.clientWidth; H=wrap.clientHeight;
+    cv.width=W*DPR; cv.height=H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); draw();
   }
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize',resize);
 
-  // ---------- direction + parsing ----------
-  const DIRS = {
-    up:[0,1], north:[0,1], n:[0,1], forward:[0,1], top:[0,1],
-    down:[0,-1], south:[0,-1], s:[0,-1], back:[0,-1], bottom:[0,-1],
-    left:[-1,0], west:[-1,0], w:[-1,0],
-    right:[1,0], east:[1,0], e:[1,0]
-  };
+  /* ---------------- geometry helpers ---------------- */
+  function polygonArea(ring){
+    if(ring.length<3) return 0; let a=0;
+    for(let i=0;i<ring.length;i++){const p=ring[i],q=ring[(i+1)%ring.length];a+=p.x*q.y-q.x*p.y;}
+    return Math.abs(a/2);
+  }
+  function perimeter(pts){let d=0;for(let i=1;i<pts.length;i++)d+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);return d;}
+  function centroid(pts){let x=0,y=0;pts.forEach(p=>{x+=p.x;y+=p.y;});return{x:x/pts.length,y:y/pts.length};}
+  function fmt(n){return(Math.round(n*100)/100).toString();}
+  function commas(n){return Math.round(n).toLocaleString();}
 
-  const WORDNUM = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+  function allPoints(){
+    const out=[]; sections.forEach(s=>s.verts.forEach(p=>out.push(p)));
+    cur.verts.forEach(p=>out.push(p)); roomLabels.forEach(p=>out.push(p));
+    return out;
+  }
+
+  /* ---------------- transform ---------------- */
+  function computeView(w,h,pad){
+    const pts=allPoints();
+    if(pts.length<2){const s=Math.min(w,h)/60;return{s,cx:w/2,cy:h/2};}
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    pts.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+    const spanX=Math.max(maxX-minX,1),spanY=Math.max(maxY-minY,1);
+    let s=Math.min((w-pad*2)/spanX,(h-pad*2)/spanY);
+    if(!isFinite(s)||s<=0)s=10; s=Math.min(s,16);
+    return{s,cx:(w-(minX+maxX)*s)/2,cy:(h+(minY+maxY)*s)/2};
+  }
+  const toScreen=(v,p)=>({X:v.cx+p.x*v.s,Y:v.cy-p.y*v.s});
+  function screenToFeet(px,py){return{x:(px-view.cx)/view.s,y:(view.cy-py)/view.s};}
+
+  /* ---------------- command vocab ---------------- */
+  const DIRS={up:[0,1],north:[0,1],n:[0,1],forward:[0,1],top:[0,1],
+    down:[0,-1],south:[0,-1],s:[0,-1],back:[0,-1],bottom:[0,-1],
+    left:[-1,0],west:[-1,0],w:[-1,0],right:[1,0],east:[1,0],e:[1,0]};
+  const WORDNUM={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
     eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
     twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
 
-  // turn a spoken chunk into a number of feet (handles decimals, "point", feet+inches)
+  // room label presets: [canonical, [aliases...]] — longest aliases matched first
+  const LABELS=[
+    ["Primary Bedroom",["primary bedroom","master bedroom","primary bed","master bed"]],
+    ["Primary Bathroom",["primary bathroom","primary bath","master bathroom","master bath","primary ensuite"]],
+    ["Breakfast Nook",["breakfast nook"]],
+    ["Living Room",["living room"]],
+    ["Family Room",["family room"]],
+    ["Full Bath",["full bathroom","full bath"]],
+    ["Half Bath",["half bathroom","half bath","powder room","powder"]],
+    ["2 Car Garage",["2 car garage","two car garage","2-car garage","double garage"]],
+    ["1 Car Garage",["1 car garage","one car garage","1-car garage","single garage"]],
+    ["Dining",["dining room","dining"]],
+    ["Breakfast",["breakfast"]],
+    ["Bedroom",["bedroom","bed room"]],
+    ["Kitchen",["kitchen"]],
+    ["Office",["office","study","den"]],
+    ["Loft",["loft"]],
+    ["Foyer",["foyer"]],
+    ["Entry",["entryway","entry"]],
+    ["Laundry",["laundry room","laundry"]],
+    ["Mudroom",["mudroom","mud room"]],
+    ["Living",["living"]],
+    ["Family",["family"]]
+  ];
+  // section categories -> sq ft bucket
+  const CATS=[
+    ["First Floor","above",["first floor","1st floor","ground floor","main floor","main level","first"]],
+    ["Second Floor","above",["second floor","2nd floor","upstairs","second"]],
+    ["Third Floor","above",["third floor","3rd floor","third"]],
+    ["Fourth Floor","above",["fourth floor","4th floor","fourth"]],
+    ["Finished Basement","below_fin",["finished basement"]],
+    ["Unfinished Basement","below_unfin",["unfinished basement"]],
+    ["Basement","below_other",["basement"]],
+    ["Garage","garage",["garage"]],
+    ["Storage","storage",["storage"]],
+    ["Workshop","workshop",["workshop","work shop"]],
+    ["Barn","barn",["barn"]],
+    ["Outbuilding","outbuilding",["outbuilding","out building","shed"]]
+  ];
+  const BUCKET={}, CATNAME={};
+  CATS.forEach(([name,b])=>{BUCKET[name]=b;CATNAME[name]=name;});
+  const SECT_COLOR=b=>({above:'#14293f',below_fin:'#2f4a63',below_unfin:'#6a7686',
+    below_other:'#6a7686',garage:'#d99a2b',storage:'#9a7bb0',workshop:'#9a7bb0',
+    barn:'#b06a4a',outbuilding:'#b06a4a'}[b]||'#6a7686');
+
+  function normNumbersInText(t){
+    return t.replace(/\bone\b/g,'1').replace(/\btwo\b/g,'2').replace(/\bthree\b/g,'3').replace(/\bfour\b/g,'4');
+  }
+  function matchLabel(raw){
+    const t=normNumbersInText(raw.toLowerCase().replace(/[.,]/g,'').trim());
+    for(const[name,aliases]of LABELS){for(const a of aliases){if(t.includes(a))return name;}}
+    return raw.trim().replace(/\b\w/g,c=>c.toUpperCase());   // fall back to what they said, title-cased
+  }
+  function matchCategory(raw){
+    const t=raw.toLowerCase().replace(/[.,]/g,'').trim();
+    for(const[name,,aliases]of CATS){for(const a of aliases){if(t.includes(a))return name;}}
+    return null;
+  }
+
   function parseFeet(str){
-    str = str.replace(/[",]/g,' ').replace(/\s+/g,' ').trim();
-    // digits with optional decimal, optionally followed by inches
-    let m = str.match(/(-?\d+(?:\.\d+)?)\s*(?:feet|foot|ft|')?\s*(?:(\d+(?:\.\d+)?)\s*(?:inches|inch|in|")?)?/);
-    if(m && m[1] !== undefined){
-      let ft = parseFloat(m[1]);
-      if(m[2]!==undefined && /inch|in\b|"/.test(str)) ft += parseFloat(m[2])/12;
-      if(!isNaN(ft)) return ft;
-    }
-    // spoken "point" decimals e.g. "fifteen point two"
-    let pt = str.match(/([a-z]+)\s+point\s+([a-z]+)/);
-    if(pt && WORDNUM[pt[1]]!==undefined && WORDNUM[pt[2]]!==undefined){
-      return WORDNUM[pt[1]] + WORDNUM[pt[2]]/10;
-    }
-    // single spoken word "twenty"
-    let w = str.match(/\b([a-z]+)\b/);
-    if(w && WORDNUM[w[1]]!==undefined) return WORDNUM[w[1]];
+    str=str.replace(/[",]/g,' ').replace(/\s+/g,' ').trim();
+    let m=str.match(/(-?\d+(?:\.\d+)?)\s*(?:feet|foot|ft|')?\s*(?:(\d+(?:\.\d+)?)\s*(?:inches|inch|in|")?)?/);
+    if(m&&m[1]!==undefined){let ft=parseFloat(m[1]);
+      if(m[2]!==undefined&&/inch|in\b|"/.test(str))ft+=parseFloat(m[2])/12;
+      if(!isNaN(ft))return ft;}
+    let pt=str.match(/([a-z]+)\s+point\s+([a-z]+)/);
+    if(pt&&WORDNUM[pt[1]]!==undefined&&WORDNUM[pt[2]]!==undefined)return WORDNUM[pt[1]]+WORDNUM[pt[2]]/10;
+    let w=str.match(/\b([a-z]+)\b/); if(w&&WORDNUM[w[1]]!==undefined)return WORDNUM[w[1]];
     return null;
   }
+  function findDir(str){for(const k in DIRS){if(new RegExp('\\b'+k+'\\b').test(str))return{key:k,vec:DIRS[k]};}return null;}
+  function dirName(k){
+    if(['up','north','n','forward','top'].includes(k))return'↑ up';
+    if(['down','south','s','back','bottom'].includes(k))return'↓ down';
+    if(['left','west','w'].includes(k))return'← left';return'→ right';}
 
-  function findDir(str){
-    for(const key in DIRS){
-      const re = new RegExp('\\b'+key+'\\b');
-      if(re.test(str)) return {key, vec:DIRS[key]};
-    }
-    return null;
-  }
-
-  // split a full utterance into individual commands
+  /* ---------------- command routing ---------------- */
   function splitCommands(raw){
-    return raw.toLowerCase()
-      .replace(/\bthen\b/g,',')
-      .replace(/\band\b/g,',')
-      .split(/[,;]/)
-      .map(s=>s.trim())
-      .filter(Boolean);
+    return raw.toLowerCase().replace(/\bthen\b/g,',').replace(/\band\b/g,',')
+      .split(/[,;]/).map(s=>s.trim()).filter(Boolean);
   }
-
   function handleUtterance(raw){
-    const parts = splitCommands(raw);
-    if(!parts.length){ return; }
-    parts.forEach(runOne);
-    draw();
-    renderLog();
-    scrollLog();
+    if(pendingLabelPoint){ placeLabelText(raw); afterUpdate(); return; }
+    splitCommands(raw).forEach(runOne);
+    afterUpdate();
   }
-
   function runOne(part){
-    // label command?
-    let lab = part.match(/^(?:label|room|name(?:\s+this)?|this\s+is(?:\s+the)?)\s+(.+)$/);
-    if(lab){
-      const text = titleCase(lab[1].replace(/\bthe\b/g,'').trim());
-      if(text){
-        // place label at centroid of current path (or at pen if too few points)
-        const c = centroid(verts.length>2?verts:[pen,pen]);
-        labels.push({x:c.x,y:c.y,text});
-        commands.push({kind:'label',text:'label · '+text,ok:true});
-        return;
-      }
-    }
-    // movement command
-    const dir = findDir(part);
-    const feet = parseFeet(part);
-    if(dir && feet!==null && feet>0){
-      pen = {x: pen.x + dir.vec[0]*feet, y: pen.y + dir.vec[1]*feet};
-      verts.push({x:pen.x, y:pen.y});
-      commands.push({kind:'move',text:fmt(feet)+' ft '+dirName(dir.key),ok:true});
+    if(/^close\b/.test(part)||/^complete\b/.test(part)){doClose(part);return;}
+    const cat=matchCategory(part);
+    if(cat&&sections.length){assignCategory(targetSection(),cat,true);return;}
+    const dir=findDir(part), feet=parseFeet(part);
+    if(dir&&feet!==null&&feet>0){
+      if(!cur.active){cur={verts:[{x:0,y:0}],pen:{x:0,y:0},active:true};}
+      cur.pen={x:cur.pen.x+dir.vec[0]*feet,y:cur.pen.y+dir.vec[1]*feet};
+      cur.verts.push({...cur.pen});
+      commands.push({kind:'move',text:fmt(feet)+' ft '+dirName(dir.key)});
+      autoCloseCheck();
       return;
     }
-    commands.push({kind:'error',text:'unclear: "'+part+'"',ok:false});
+    commands.push({kind:'error',text:'unclear: "'+part+'"'});
   }
-
-  function dirName(k){
-    if(['up','north','n','forward','top'].includes(k)) return '↑ up';
-    if(['down','south','s','back','bottom'].includes(k)) return '↓ down';
-    if(['left','west','w'].includes(k)) return '← left';
-    return '→ right';
+  function doClose(part){
+    if(!cur.active||cur.verts.length<2){commands.push({kind:'error',text:'nothing to close yet'});return;}
+    const s0=cur.verts[0],p=cur.pen; const dir=findDir(part);
+    let len; if(dir&&dir.vec[0]!==0)len=Math.abs(s0.x-p.x); else if(dir&&dir.vec[1]!==0)len=Math.abs(s0.y-p.y);
+    else len=Math.hypot(s0.x-p.x,s0.y-p.y);
+    cur.pen={x:s0.x,y:s0.y}; cur.verts.push({...s0});
+    const label=dir?('close '+dirName(dir.key).replace(/[↑↓←→]\s*/,'')):'close';
+    commands.push({kind:'close',text:label+' · '+fmt(len)+' ft'});
+    finalizeCurrent();
   }
-  function titleCase(s){return s.replace(/\b\w/g,c=>c.toUpperCase());}
-  function fmt(n){return (Math.round(n*100)/100).toString();}
-
-  function centroid(pts){
-    let x=0,y=0; pts.forEach(p=>{x+=p.x;y+=p.y;});
-    return {x:x/pts.length, y:y/pts.length};
-  }
-
-  // shoelace area (returns absolute sq ft); treats path as closed
-  function polygonArea(pts){
-    if(pts.length<3) return 0;
-    let a=0;
-    for(let i=0;i<pts.length;i++){
-      const p=pts[i], q=pts[(i+1)%pts.length];
-      a += p.x*q.y - q.x*p.y;
+  function autoCloseCheck(){
+    if(cur.active&&cur.verts.length>=4){
+      const s0=cur.verts[0],e=cur.pen;
+      if(Math.hypot(e.x-s0.x,e.y-s0.y)<0.6){finalizeCurrent();}
     }
-    return Math.abs(a/2);
+  }
+  function finalizeCurrent(){
+    const ring=cur.verts.slice(); // last==first, drop dup for ring
+    if(ring.length>1){const a=ring[0],b=ring[ring.length-1];if(Math.hypot(a.x-b.x,a.y-b.y)<1e-6)ring.pop();}
+    if(ring.length<3){cur={verts:[],pen:null,active:false};return;}
+    const sec={id:uid(),verts:ring,area:polygonArea(ring),category:null};
+    sections.push(sec); cur={verts:[],pen:null,active:false};
+    flash('Section closed · '+commas(sec.area)+' sq ft — describe it');
+  }
+  function targetSection(){
+    for(let i=sections.length-1;i>=0;i--)if(!sections[i].category)return sections[i];
+    return sections[sections.length-1];
+  }
+  function assignCategory(sec,cat,fromVoice){
+    if(!sec)return; sec.category=cat;
+    if(fromVoice)commands.push({kind:'section',text:'section · '+cat});
+    afterUpdate();
   }
 
-  function perimeter(pts){
-    let d=0;
+  /* ---------------- labels ---------------- */
+  function placeLabelText(raw){
+    if(!pendingLabelPoint)return;
+    const text=matchLabel(raw);
+    roomLabels.push({id:uid(),x:pendingLabelPoint.x,y:pendingLabelPoint.y,text});
+    commands.push({kind:'label',text:'label · '+text});
+    pendingLabelPoint=null; setMode('draw');
+    $('heard').innerHTML='Placed label: <b>'+text+'</b>';
+  }
+
+  /* ---------------- rendering ---------------- */
+  function renderSketch(g,w,h,opt){
+    const v=computeView(w,h,opt.pad||46);
+    if(opt.bg){g.fillStyle=opt.bg;g.fillRect(0,0,w,h);}
+    if(opt.grid)drawGrid(g,w,h);
+    // completed sections
+    sections.forEach(sec=>{
+      const col=SECT_COLOR(BUCKET[sec.category]);
+      g.beginPath();
+      sec.verts.forEach((p,i)=>{const t=toScreen(v,p);i?g.lineTo(t.X,t.Y):g.moveTo(t.X,t.Y);});
+      g.closePath();
+      g.fillStyle=hexA(col,0.10);g.fill();
+      g.lineWidth=2.4;g.strokeStyle=col;g.lineJoin='round';g.stroke();
+      drawDims(g,v,[...sec.verts,sec.verts[0]]);
+      // centroid caption
+      const c=toScreen(v,centroid(sec.verts));
+      g.textAlign='center';g.textBaseline='middle';
+      if(sec.category){g.fillStyle=col;g.font='700 13px "Space Grotesk",sans-serif';g.fillText(sec.category,c.X,c.Y-8);}
+      g.fillStyle='#14293f';g.font='600 11px "JetBrains Mono",monospace';
+      g.fillText(commas(sec.area)+' sq ft',c.X,c.Y+(sec.category?9:0));
+    });
+    // in-progress path
+    if(cur.verts.length){
+      g.beginPath();
+      cur.verts.forEach((p,i)=>{const t=toScreen(v,p);i?g.lineTo(t.X,t.Y):g.moveTo(t.X,t.Y);});
+      g.lineWidth=2.4;g.strokeStyle='#14293f';g.lineJoin='round';g.lineCap='round';g.stroke();
+      drawDims(g,v,cur.verts);
+      cur.verts.forEach((p,i)=>{const t=toScreen(v,p);g.beginPath();g.arc(t.X,t.Y,3,0,7);
+        g.fillStyle=i===0?'#14293f':'#5a6b7a';g.fill();});
+      if(opt.live&&cur.pen){const tp=toScreen(v,cur.pen);
+        g.beginPath();g.arc(tp.X,tp.Y,6,0,7);g.fillStyle='rgba(228,87,46,.18)';g.fill();
+        g.beginPath();g.arc(tp.X,tp.Y,3.5,0,7);g.fillStyle='#e4572e';g.fill();}
+    }
+    // room labels
+    g.font='700 14px "Space Grotesk",sans-serif';g.textAlign='center';g.textBaseline='middle';
+    roomLabels.forEach(l=>{const t=toScreen(v,l);
+      const tw=g.measureText(l.text).width+10;
+      g.fillStyle=opt.bg?'rgba(255,255,255,.85)':'rgba(244,241,232,.85)';
+      g.fillRect(t.X-tw/2,t.Y-10,tw,20);
+      g.fillStyle='#14293f';g.fillText(l.text,t.X,t.Y);});
+    return v;
+  }
+  function drawDims(g,v,pts){
+    g.font='600 11px "JetBrains Mono",monospace';
     for(let i=1;i<pts.length;i++){
-      d += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+      const a=toScreen(v,pts[i-1]),b=toScreen(v,pts[i]);
+      const len=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y); if(len<0.05)continue;
+      const mx=(a.X+b.X)/2,my=(a.Y+b.Y)/2;
+      const horiz=Math.abs(a.Y-b.Y)<Math.abs(a.X-b.X);
+      const label=fmt(len)+"'";g.textAlign='center';g.textBaseline='middle';
+      const tw=g.measureText(label).width+8,off=13;
+      g.fillStyle='rgba(244,241,232,.92)';g.fillRect(mx-tw/2,(horiz?my-off:my)-8,tw,16);
+      g.fillStyle='#14293f';g.fillText(label,mx,horiz?my-off:my);
     }
-    return d;
   }
-
-  // is the path effectively closed (pen back near start)?
-  function isClosed(){
-    if(verts.length<4) return false;
-    const s=verts[0], e=verts[verts.length-1];
-    return Math.hypot(e.x-s.x, e.y-s.y) < 0.75; // within 9 inches
+  function drawGrid(g,w,h){
+    g.fillStyle='#f4f1e8';g.fillRect(0,0,w,h);const step=22;g.lineWidth=1;
+    g.strokeStyle='#e0dac9';g.beginPath();
+    for(let x=0;x<w;x+=step){g.moveTo(x,0);g.lineTo(x,h);}for(let y=0;y<h;y+=step){g.moveTo(0,y);g.lineTo(w,y);}g.stroke();
+    g.strokeStyle='#d0c8b2';g.beginPath();
+    for(let x=0;x<w;x+=step*5){g.moveTo(x,0);g.lineTo(x,h);}for(let y=0;y<h;y+=step*5){g.moveTo(0,y);g.lineTo(w,y);}g.stroke();
   }
+  function hexA(hex,a){const n=parseInt(hex.slice(1),16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
 
-  // ---------- drawing ----------
   function draw(){
     ctx.clearRect(0,0,W,H);
-    drawPaper();
-
-    // compute transform: fit feet-space into canvas with padding
-    const pad = 46;
-    let minX=0,maxX=0,minY=0,maxY=0;
-    verts.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
-    const spanX = Math.max(maxX-minX, 1), spanY = Math.max(maxY-minY, 1);
-    const scale = Math.min((W-pad*2)/spanX, (H-pad*2)/spanY);
-    const s = isFinite(scale)&&scale>0 ? scale : 10;
-    const cx = (W - (minX+maxX)*s)/2;
-    const cy = (H + (minY+maxY)*s)/2; // flip y
-    const T = p => ({X: cx + p.x*s, Y: cy - p.y*s});
-
-    const closed = isClosed();
-
-    // filled room
-    if(verts.length>2){
-      ctx.beginPath();
-      verts.forEach((p,i)=>{const t=T(p); i?ctx.lineTo(t.X,t.Y):ctx.moveTo(t.X,t.Y);});
-      if(closed) ctx.closePath();
-      ctx.fillStyle = closed ? 'rgba(42,157,143,.10)' : 'rgba(20,41,63,.05)';
-      ctx.fill();
-    }
-
-    // walls
-    ctx.lineWidth = 2.4; ctx.strokeStyle = 'var(--ink)'; ctx.strokeStyle = '#14293f';
-    ctx.lineJoin='round'; ctx.lineCap='round';
-    ctx.beginPath();
-    verts.forEach((p,i)=>{const t=T(p); i?ctx.lineTo(t.X,t.Y):ctx.moveTo(t.X,t.Y);});
-    if(closed) ctx.closePath();
-    ctx.stroke();
-
-    // dimension labels on each segment
-    ctx.font = '600 11px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#2f4a63';
-    for(let i=1;i<verts.length;i++){
-      const a=T(verts[i-1]), b=T(verts[i]);
-      const len = Math.hypot(verts[i].x-verts[i-1].x, verts[i].y-verts[i-1].y);
-      const mx=(a.X+b.X)/2, my=(a.Y+b.Y)/2;
-      const horiz = Math.abs(a.Y-b.Y) < Math.abs(a.X-b.X);
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      const label = fmt(len)+"'";
-      const off=13;
-      ctx.save();
-      ctx.fillStyle='rgba(244,241,232,.9)';
-      const tw=ctx.measureText(label).width+8;
-      ctx.fillRect(mx-tw/2, (horiz?my-off:my)-8, tw, 16);
-      ctx.restore();
-      ctx.fillStyle='#14293f';
-      ctx.fillText(label, mx, horiz?my-off:my);
-    }
-
-    // vertices
-    verts.forEach((p,i)=>{
-      const t=T(p);
-      ctx.beginPath(); ctx.arc(t.X,t.Y,3,0,7); 
-      ctx.fillStyle = i===0 ? '#14293f' : '#5a6b7a'; ctx.fill();
-    });
-
-    // room / freehand labels
-    ctx.font='700 14px "Space Grotesk", sans-serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    labels.forEach(l=>{
-      const t=T(l);
-      ctx.fillStyle='#14293f';
-      ctx.fillText(l.text, t.X, t.Y);
-    });
-
-    // live pen
-    const tp=T(pen);
-    ctx.beginPath(); ctx.arc(tp.X,tp.Y,6,0,7);
-    ctx.fillStyle='rgba(228,87,46,.18)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(tp.X,tp.Y,3.5,0,7);
-    ctx.fillStyle='#e4572e'; ctx.fill();
-
-    updateReadout(closed);
+    view=renderSketch(ctx,W,H,{grid:true,live:true,pad:46});
+    // readout
+    const last=commands.filter(c=>c.kind==='move').slice(-1)[0];
+    $('rHead').textContent=last?last.text:'—';
+    $('rPerim').textContent=fmt(perimeter(cur.verts))+' ft';
   }
 
-  function drawPaper(){
-    ctx.fillStyle='#f4f1e8'; ctx.fillRect(0,0,W,H);
-    const step=22;
-    ctx.lineWidth=1;
-    ctx.strokeStyle='#e0dac9';
-    ctx.beginPath();
-    for(let x=0;x<W;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,H);}
-    for(let y=0;y<H;y+=step){ctx.moveTo(0,y);ctx.lineTo(W,y);}
-    ctx.stroke();
-    ctx.strokeStyle='#d0c8b2';
-    ctx.beginPath();
-    for(let x=0;x<W;x+=step*5){ctx.moveTo(x,0);ctx.lineTo(x,H);}
-    for(let y=0;y<H;y+=step*5){ctx.moveTo(0,y);ctx.lineTo(W,y);}
-    ctx.stroke();
-  }
-
-  function updateReadout(closed){
-    const last = commands.filter(c=>c.kind==='move').slice(-1)[0];
-    document.getElementById('rHead').textContent = last ? last.text.split(' ').slice(-1)[0] : '—';
-    document.getElementById('rPerim').textContent = fmt(perimeter(verts))+' ft';
-    const areaLine = document.getElementById('rAreaLine');
-    if(closed){
-      areaLine.style.display='block';
-      document.getElementById('rArea').textContent = Math.round(polygonArea(verts)).toLocaleString()+' sq ft';
-    } else {
-      areaLine.style.display='none';
-    }
-  }
-
-  // ---------- log ----------
+  /* ---------------- panels ---------------- */
   function renderLog(){
-    const el=document.getElementById('log');
+    const el=$('log');
     if(!commands.length){el.innerHTML='<div class="empty">No commands yet.</div>';return;}
-    el.innerHTML = commands.map((c,i)=>
-      `<div class="entry ${c.kind}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="cmd">${c.text}</span></div>`
-    ).join('');
+    el.innerHTML=commands.map((c,i)=>`<div class="entry ${c.kind}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="cmd">${c.text}</span></div>`).join('');
+    el.scrollTop=el.scrollHeight;
   }
-  function scrollLog(){const el=document.getElementById('log');el.scrollTop=el.scrollHeight;}
-
-  // ---------- controls ----------
-  document.getElementById('undo').onclick=()=>{
-    if(!commands.length) return;
-    const c=commands.pop();
-    if(c.kind==='move'){ verts.pop(); pen = verts[verts.length-1] ? {...verts[verts.length-1]} : {x:0,y:0}; }
-    else if(c.kind==='label'){ labels.pop(); }
-    draw(); renderLog();
-  };
-  document.getElementById('clear').onclick=()=>{
-    verts=[{x:0,y:0}]; labels=[]; commands=[]; pen={x:0,y:0};
-    draw(); renderLog();
-    document.getElementById('heard').textContent='Cleared. Ready for a new sketch.';
-  };
-  document.getElementById('sample').onclick=()=>{
-    verts=[{x:0,y:0}]; labels=[]; commands=[]; pen={x:0,y:0};
-    handleUtterance("15.2 feet up, 20.4 feet right, 15.2 feet down, 20.4 feet left, label Living Room");
-    document.getElementById('heard').innerHTML='Ran sample: <b>"15.2 up, 20.4 right, 15.2 down, 20.4 left, label Living Room"</b>';
-  };
-
-  // text input
-  function runTyped(){
-    const inp=document.getElementById('typeIn');
-    const v=inp.value.trim();
-    if(!v) return;
-    document.getElementById('heard').innerHTML='Typed: <b>'+v+'</b>';
-    handleUtterance(v);
-    inp.value='';
+  function renderSections(){
+    const el=$('sections');
+    if(!sections.length){el.innerHTML='<div class="empty">Close a shape to add a section.</div>';return;}
+    el.innerHTML='';
+    sections.forEach((s,i)=>{
+      const row=document.createElement('div');row.className='sec-row';
+      const opts=CATS.map(([n])=>`<option value="${n}"${s.category===n?' selected':''}>${n}</option>`).join('');
+      row.innerHTML=`<span class="sw" style="background:${SECT_COLOR(BUCKET[s.category])}"></span>
+        <div class="meta"><div class="t">Section ${i+1}</div><div class="a">${commas(s.area)} sq ft</div></div>
+        <select data-id="${s.id}"><option value="">— describe —</option>${opts}</select>
+        <button class="del" data-id="${s.id}" title="Delete">×</button>`;
+      el.appendChild(row);
+    });
+    el.querySelectorAll('select').forEach(sel=>sel.onchange=e=>{
+      const s=sections.find(x=>x.id===e.target.dataset.id); if(s){s.category=e.target.value||null;afterUpdate();}});
+    el.querySelectorAll('.del').forEach(b=>b.onclick=e=>{
+      sections=sections.filter(x=>x.id!==e.target.dataset.id);afterUpdate();});
   }
-  document.getElementById('typeGo').onclick=runTyped;
-  document.getElementById('typeIn').addEventListener('keydown',e=>{if(e.key==='Enter')runTyped();});
+  function totals(){
+    const t={above:0,below_fin:0,below_unfin:0,below_other:0,garage:0,storage:0,workshop:0,barn:0,outbuilding:0};
+    sections.forEach(s=>{const b=BUCKET[s.category];if(b)t[b]+=s.area;});return t;
+  }
+  function renderFooter(){
+    const t=totals();const f=$('footer');const boxes=[];
+    boxes.push(`<div class="stat gla"><div class="k">Above Grade GLA</div>
+      <div class="v">${commas(t.above)} <small>sq ft</small></div></div>`);
+    const belowTotal=t.below_fin+t.below_unfin+t.below_other;
+    boxes.push(`<div class="stat"><div class="k">Below Grade</div>
+      <div class="v">${commas(belowTotal)} <small>sq ft</small></div>
+      <div class="sub">Finished <b>${commas(t.below_fin)}</b> · Unfinished <b>${commas(t.below_unfin+t.below_other)}</b></div></div>`);
+    [['Garage','garage'],['Storage','storage'],['Workshop','workshop'],['Barn','barn'],['Outbuilding','outbuilding']]
+      .forEach(([label,key])=>{if(t[key]>0)boxes.push(`<div class="stat"><div class="k">${label}</div><div class="v">${commas(t[key])} <small>sq ft</small></div></div>`);});
+    f.innerHTML=boxes.join('');
+  }
 
-  // ---------- voice ----------
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const mic=document.getElementById('mic');
-  const micLabel=document.getElementById('micLabel');
-  const heard=document.getElementById('heard');
+  function afterUpdate(){draw();renderLog();renderSections();renderFooter();}
 
-  if(!SR){
-    micLabel.textContent='Voice not supported here';
-    mic.style.opacity=.55;
-    mic.disabled=true;
-    heard.textContent='This browser has no speech engine — use the text box below (Chrome or Android work best for voice).';
-  } else {
-    const rec=new SR();
-    rec.lang='en-US'; rec.interimResults=true; rec.continuous=false;
-    let listening=false, finalText='';
+  /* ---------------- modes + canvas clicks ---------------- */
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('.modes button').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+    cv.classList.toggle('aim',m!=='draw');
+    const banner=$('banner');
+    if(m==='setstart'){banner.textContent='Click the canvas to set a start corner';banner.style.display='block';}
+    else if(m==='label'){banner.textContent='Click where the room label goes';banner.style.display='block';}
+    else{banner.style.display='none';}
+  }
+  document.querySelectorAll('.modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 
-    function start(){
-      if(listening) return;
-      finalText='';
-      try{rec.start();}catch(e){}
+  cv.addEventListener('click',e=>{
+    if(mode==='draw')return;
+    const r=cv.getBoundingClientRect();
+    const pt=screenToFeet(e.clientX-r.left,e.clientY-r.top);
+    if(mode==='setstart'){
+      cur={verts:[{x:pt.x,y:pt.y}],pen:{x:pt.x,y:pt.y},active:true};
+      commands.push({kind:'move',text:'start corner set'});
+      setMode('draw');afterUpdate();
+      $('heard').textContent='Start point placed. Now say wall lengths, e.g. "20 feet right".';
+    }else if(mode==='label'){
+      pendingLabelPoint={x:pt.x,y:pt.y};
+      $('banner').textContent='Now say or type the room name';
+      $('heard').textContent='Spot set — say or type the room name (e.g. "Kitchen").';
     }
-    function stop(){ try{rec.stop();}catch(e){} }
+  });
 
+  /* ---------------- toolbar ---------------- */
+  $('undo').onclick=()=>{
+    if(pendingLabelPoint){pendingLabelPoint=null;setMode('draw');return;}
+    if(!commands.length)return;
+    const c=commands[commands.length-1];
+    if(c.kind==='move'){
+      if(cur.active&&cur.verts.length>1){cur.verts.pop();cur.pen={...cur.verts[cur.verts.length-1]};}
+      else if(cur.active){cur={verts:[],pen:null,active:false};}
+      commands.pop();
+    }else if(c.kind==='close'){
+      // reopen last section
+      const s=sections.pop();
+      if(s){cur={verts:s.verts.map(p=>({...p})),pen:{...s.verts[s.verts.length-1]},active:true};}
+      commands.pop();
+    }else if(c.kind==='label'){roomLabels.pop();commands.pop();}
+    else if(c.kind==='section'){const s=targetSection();if(s)s.category=null;commands.pop();}
+    else commands.pop();
+    afterUpdate();
+  };
+  $('clear').onclick=()=>{
+    sections=[];roomLabels=[];cur={verts:[],pen:null,active:false};commands=[];pendingLabelPoint=null;
+    setMode('draw');afterUpdate();$('heard').textContent='Cleared. Ready for a new sketch.';
+  };
+  $('sample').onclick=()=>{
+    sections=[];roomLabels=[];cur={verts:[],pen:null,active:false};commands=[];pendingLabelPoint=null;
+    // First floor 40 x 30
+    sections.push({id:uid(),verts:[{x:0,y:0},{x:0,y:30},{x:40,y:30},{x:40,y:0}],area:1200,category:'First Floor'});
+    // Garage 22 x 22 to the right, aligned to bottom
+    sections.push({id:uid(),verts:[{x:44,y:0},{x:44,y:22},{x:66,y:22},{x:66,y:0}],area:484,category:'Garage'});
+    roomLabels.push({id:uid(),x:12,y:9,text:'Living Room'});
+    roomLabels.push({id:uid(),x:30,y:22,text:'Kitchen'});
+    roomLabels.push({id:uid(),x:55,y:11,text:'2 Car Garage'});
+    commands.push({kind:'section',text:'sample scene loaded'});
+    setMode('draw');afterUpdate();
+    $('heard').innerHTML='Loaded a sample: <b>First Floor + 2 Car Garage</b>. Check the sq-ft boxes below.';
+  };
+  $('export').onclick=exportPNG;
+
+  function exportPNG(){
+    if(!sections.length&&cur.verts.length<2){$('heard').textContent='Nothing to export yet — draw a shape first.';return;}
+    const scale=2, ow=1600, oh=1150;
+    const c=document.createElement('canvas');c.width=ow*scale;c.height=oh*scale;
+    const g=c.getContext('2d');g.scale(scale,scale);
+    renderSketch(g,ow,oh-120,{grid:false,live:false,bg:'#ffffff',pad:70});
+    // title block
+    const t=totals();
+    g.fillStyle='#14293f';g.fillRect(0,oh-120,ow,120);
+    g.textAlign='left';g.textBaseline='alphabetic';
+    g.fillStyle='#ffffff';g.font='700 26px "Space Grotesk",sans-serif';
+    g.fillText('Appraisal Sketch',40,oh-78);
+    g.font='500 14px "JetBrains Mono",monospace';g.fillStyle='#c7d2dc';
+    g.fillText('Generated by FieldSketch (demo)',40,oh-52);
+    // stat readout on title block
+    const belowTot=t.below_fin+t.below_unfin+t.below_other;
+    const stats=[['Above Grade GLA',commas(t.above)],['Below Grade',commas(belowTot)]];
+    if(t.garage>0)stats.push(['Garage',commas(t.garage)]);
+    if(t.storage>0)stats.push(['Storage',commas(t.storage)]);
+    if(t.workshop>0)stats.push(['Workshop',commas(t.workshop)]);
+    if(t.barn>0)stats.push(['Barn',commas(t.barn)]);
+    if(t.outbuilding>0)stats.push(['Outbuilding',commas(t.outbuilding)]);
+    let sx=ow-40;g.textAlign='right';
+    stats.reverse().forEach(([k,v])=>{
+      g.font='700 22px "Space Grotesk",sans-serif';g.fillStyle='#ffffff';
+      const vt=v+' sf';g.fillText(vt,sx,oh-56);
+      g.font='500 11px "JetBrains Mono",monospace';g.fillStyle='#8ea3b5';
+      g.fillText(k.toUpperCase(),sx,oh-38);
+      sx-=Math.max(g.measureText(k).width,110)+34;
+    });
+    const url=c.toDataURL('image/png');
+    const a=document.createElement('a');a.href=url;a.download='appraisal-sketch.png';
+    document.body.appendChild(a);a.click();a.remove();
+    $('heard').textContent='Exported appraisal-sketch.png (no grid).';
+  }
+
+  function flash(msg){const b=$('banner');b.textContent=msg;b.style.display='block';
+    clearTimeout(flash._t);flash._t=setTimeout(()=>{if(mode==='draw')b.style.display='none';},2600);}
+
+  /* ---------------- text input ---------------- */
+  function runTyped(){const inp=$('typeIn');const v=inp.value.trim();if(!v)return;
+    $('heard').innerHTML='Typed: <b>'+v+'</b>';handleUtterance(v);inp.value='';}
+  $('typeGo').onclick=runTyped;
+  $('typeIn').addEventListener('keydown',e=>{if(e.key==='Enter')runTyped();});
+
+  /* ---------------- voice ---------------- */
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const mic=$('mic'),micLabel=$('micLabel'),heard=$('heard');
+  if(!SR){micLabel.textContent='Voice not supported here';mic.style.opacity=.55;mic.disabled=true;
+    heard.textContent='This browser has no speech engine — use the text box (Chrome/Android work best).';
+  }else{
+    const rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.continuous=false;
+    let listening=false,finalText='';
+    const start=()=>{if(listening)return;finalText='';try{rec.start();}catch(e){}};
+    const stop=()=>{try{rec.stop();}catch(e){}};
     rec.onstart=()=>{listening=true;mic.classList.add('listening');micLabel.textContent='Listening…';heard.textContent='…';};
-    rec.onend=()=>{
-      listening=false;mic.classList.remove('listening');micLabel.textContent='Hold to speak';
-      if(finalText.trim()){heard.innerHTML='Heard: <b>'+finalText+'</b>';handleUtterance(finalText);}
-    };
-    rec.onerror=(e)=>{heard.textContent='Mic error: '+e.error+' — try the text box.';};
-    rec.onresult=(e)=>{
-      let interim='';
-      for(let i=e.resultIndex;i<e.results.length;i++){
-        const r=e.results[i];
-        if(r.isFinal) finalText+=r[0].transcript;
-        else interim+=r[0].transcript;
-      }
-      heard.textContent = (finalText+interim) || '…';
-    };
-
-    // press-and-hold on touch, click-to-toggle on desktop
+    rec.onend=()=>{listening=false;mic.classList.remove('listening');micLabel.textContent='Hold to speak';
+      if(finalText.trim()){heard.innerHTML='Heard: <b>'+finalText+'</b>';handleUtterance(finalText);}};
+    rec.onerror=e=>{heard.textContent='Mic error: '+e.error+' — try the text box.';};
+    rec.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
+      if(r.isFinal)finalText+=r[0].transcript;else interim+=r[0].transcript;}
+      heard.textContent=(finalText+interim)||'…';};
     mic.addEventListener('mousedown',e=>{e.preventDefault();start();});
     mic.addEventListener('mouseup',e=>{e.preventDefault();stop();});
     mic.addEventListener('mouseleave',()=>{if(listening)stop();});
@@ -522,9 +629,8 @@
     mic.addEventListener('touchend',e=>{e.preventDefault();stop();},{passive:false});
   }
 
-  // ---------- init ----------
-  resize();
-  renderLog();
+  /* ---------------- init ---------------- */
+  resize();afterUpdate();
 })();
 </script>
 </body>
