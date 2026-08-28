@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FieldSketch — Voice Appraisal Sketch (Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --graphite:#1b1e23;
+    --graphite-2:#23272e;
+    --paper:#f4f1e8;
+    --grid:#d8d2c2;
+    --grid-strong:#c4bda8;
+    --ink:#14293f;
+    --ink-soft:#2f4a63;
+    --pen:#e4572e;
+    --live:#2a9d8f;
+    --line:#3a3f47;
+    --muted:#8b9199;
+    --text-on-dark:#e9e6dd;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--graphite);
+    color:var(--text-on-dark);
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  }
+  header{
+    display:flex;align-items:baseline;gap:12px;
+    padding:12px 16px 10px;border-bottom:1px solid var(--line);
+    flex:0 0 auto;
+  }
+  header .mark{
+    font-weight:700;letter-spacing:-.02em;font-size:18px;
+    display:flex;align-items:center;gap:8px;
+  }
+  header .mark .dot{width:9px;height:9px;background:var(--pen);border-radius:2px;transform:rotate(45deg)}
+  header .tag{
+    font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
+    padding:2px 7px;border-radius:3px;
+  }
+  main{flex:1 1 auto;display:flex;min-height:0}
+  .stage{
+    flex:1 1 auto;position:relative;min-width:0;
+    display:flex;flex-direction:column;background:var(--graphite-2);
+  }
+  .canvas-wrap{flex:1 1 auto;position:relative;overflow:hidden}
+  canvas{display:block;width:100%;height:100%;touch-action:none}
+  .readout{
+    position:absolute;top:12px;left:12px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.7;
+    background:rgba(20,41,63,.85);color:#dfe8ef;padding:8px 11px;border-radius:5px;
+    border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(2px);pointer-events:none;
+  }
+  .readout b{color:#fff;font-weight:700}
+  .readout .area{color:var(--live)}
+  .side{
+    flex:0 0 320px;background:var(--graphite);border-left:1px solid var(--line);
+    display:flex;flex-direction:column;min-height:0;
+  }
+  .voice{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .mic-btn{
+    width:100%;border:none;border-radius:8px;padding:14px;cursor:pointer;
+    font-family:inherit;font-weight:700;font-size:15px;letter-spacing:.01em;
+    background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;
+    transition:background .15s,transform .05s;
+  }
+  .mic-btn:active{transform:scale(.99)}
+  .mic-btn.listening{background:var(--live);animation:pulse 1.4s ease-in-out infinite}
+  .mic-btn svg{width:18px;height:18px}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(42,157,143,.5)}50%{box-shadow:0 0 0 8px rgba(42,157,143,0)}}
+  .heard{
+    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);
+    margin-top:10px;min-height:16px;
+  }
+  .heard b{color:var(--text-on-dark)}
+  .type-row{display:flex;gap:8px;margin-top:12px}
+  .type-row input{
+    flex:1;background:var(--graphite-2);border:1px solid var(--line);color:var(--text-on-dark);
+    border-radius:7px;padding:11px 12px;font-family:"JetBrains Mono",monospace;font-size:13px;
+  }
+  .type-row input:focus{outline:none;border-color:var(--ink-soft)}
+  .type-row button{
+    background:var(--ink-soft);border:none;color:#fff;border-radius:7px;padding:0 15px;
+    font-family:inherit;font-weight:700;cursor:pointer;font-size:14px;
+  }
+  .type-row button:active{background:var(--ink)}
+  .log-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px 6px;
+  }
+  .log-head h2{
+    margin:0;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;
+  }
+  .log{
+    flex:1 1 auto;overflow-y:auto;padding:0 16px 12px;
+    font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.55;
+  }
+  .log .entry{padding:6px 0;border-bottom:1px dashed var(--line);display:flex;gap:9px}
+  .log .entry .n{color:var(--muted);min-width:20px}
+  .log .entry.move .cmd{color:var(--text-on-dark)}
+  .log .entry.label .cmd{color:var(--live)}
+  .log .entry.error .cmd{color:var(--pen)}
+  .log .empty{color:var(--muted);padding:14px 0;font-style:italic}
+  .toolbar{
+    display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap;
+  }
+  .toolbar button{
+    flex:1;min-width:70px;background:var(--graphite-2);border:1px solid var(--line);
+    color:var(--text-on-dark);border-radius:7px;padding:9px;font-family:inherit;
+    font-size:12px;font-weight:500;cursor:pointer;
+  }
+  .toolbar button:active{background:var(--line)}
+  .toolbar button.demo{color:var(--live);border-color:var(--ink-soft)}
+  .hint{
+    padding:8px 16px 14px;font-size:11px;color:var(--muted);line-height:1.5;
+    border-top:1px solid var(--line);
+  }
+  .hint code{color:var(--text-on-dark);background:var(--graphite-2);padding:1px 5px;border-radius:3px;font-family:"JetBrains Mono",monospace}
+  /* mobile */
+  @media (max-width:760px){
+    main{flex-direction:column}
+    .side{flex:0 0 auto;border-left:none;border-top:1px solid var(--line);max-height:52dvh}
+    .stage{flex:1 1 auto}
+    .log{max-height:22dvh}
+    .hint{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="mark"><span class="dot"></span>FieldSketch</div>
+  <span class="tag">Voice Sketch · Demo</span>
+</header>
+<main>
+  <section class="stage">
+    <div class="canvas-wrap">
+      <canvas id="cv"></canvas>
+      <div class="readout" id="readout">
+        <div>heading <b id="rHead">—</b></div>
+        <div>perimeter <b id="rPerim">0.0 ft</b></div>
+        <div class="area" id="rAreaLine" style="display:none">area <b id="rArea">—</b></div>
+      </div>
+    </div>
+  </section>
+  <aside class="side">
+    <div class="voice">
+      <button class="mic-btn" id="mic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <span id="micLabel">Hold to speak</span>
+      </button>
+      <div class="heard" id="heard">Tap and speak a command…</div>
+      <div class="type-row">
+        <input id="typeIn" placeholder="or type: 15.2 feet up" autocomplete="off" spellcheck="false">
+        <button id="typeGo">Run</button>
+      </div>
+    </div>
+    <div class="log-head"><h2>Field Log</h2></div>
+    <div class="log" id="log"><div class="empty">No commands yet.</div></div>
+    <div class="toolbar">
+      <button id="undo">Undo</button>
+      <button id="clear">Clear</button>
+      <button class="demo" id="sample">Run sample room</button>
+    </div>
+    <div class="hint">
+      Say or type: <code>15.2 feet up</code>, <code>20 right</code>, then <code>label Kitchen</code>. Chain them with commas. Directions: up/down/left/right or N/S/E/W.
+    </div>
+  </aside>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  // Path is a list of vertices in "feet" space. Start at origin.
+  let verts = [{x:0,y:0}];         // in feet; y+ is up (north)
+  let labels = [];                 // {x,y,text} centroid labels for closed rooms, plus freehand
+  let commands = [];               // {kind, text, ok}
+  let pen = {x:0,y:0};             // current pen position in feet
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  let W=0,H=0,DPR=Math.max(1,window.devicePixelRatio||1);
+
+  function resize(){
+    const wrap = cv.parentElement;
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    cv.width = W*DPR; cv.height = H*DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    draw();
+  }
+  window.addEventListener('resize', resize);
+
+  // ---------- direction + parsing ----------
+  const DIRS = {
+    up:[0,1], north:[0,1], n:[0,1], forward:[0,1], top:[0,1],
+    down:[0,-1], south:[0,-1], s:[0,-1], back:[0,-1], bottom:[0,-1],
+    left:[-1,0], west:[-1,0], w:[-1,0],
+    right:[1,0], east:[1,0], e:[1,0]
+  };
+
+  const WORDNUM = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+    eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
+    twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+
+  // turn a spoken chunk into a number of feet (handles decimals, "point", feet+inches)
+  function parseFeet(str){
+    str = str.replace(/[",]/g,' ').replace(/\s+/g,' ').trim();
+    // digits with optional decimal, optionally followed by inches
+    let m = str.match(/(-?\d+(?:\.\d+)?)\s*(?:feet|foot|ft|')?\s*(?:(\d+(?:\.\d+)?)\s*(?:inches|inch|in|")?)?/);
+    if(m && m[1] !== undefined){
+      let ft = parseFloat(m[1]);
+      if(m[2]!==undefined && /inch|in\b|"/.test(str)) ft += parseFloat(m[2])/12;
+      if(!isNaN(ft)) return ft;
+    }
+    // spoken "point" decimals e.g. "fifteen point two"
+    let pt = str.match(/([a-z]+)\s+point\s+([a-z]+)/);
+    if(pt && WORDNUM[pt[1]]!==undefined && WORDNUM[pt[2]]!==undefined){
+      return WORDNUM[pt[1]] + WORDNUM[pt[2]]/10;
+    }
+    // single spoken word "twenty"
+    let w = str.match(/\b([a-z]+)\b/);
+    if(w && WORDNUM[w[1]]!==undefined) return WORDNUM[w[1]];
+    return null;
+  }
+
+  function findDir(str){
+    for(const key in DIRS){
+      const re = new RegExp('\\b'+key+'\\b');
+      if(re.test(str)) return {key, vec:DIRS[key]};
+    }
+    return null;
+  }
+
+  // split a full utterance into individual commands
+  function splitCommands(raw){
+    return raw.toLowerCase()
+      .replace(/\bthen\b/g,',')
+      .replace(/\band\b/g,',')
+      .split(/[,;]/)
+      .map(s=>s.trim())
+      .filter(Boolean);
+  }
+
+  function handleUtterance(raw){
+    const parts = splitCommands(raw);
+    if(!parts.length){ return; }
+    parts.forEach(runOne);
+    draw();
+    renderLog();
+    scrollLog();
+  }
+
+  function runOne(part){
+    // label command?
+    let lab = part.match(/^(?:label|room|name(?:\s+this)?|this\s+is(?:\s+the)?)\s+(.+)$/);
+    if(lab){
+      const text = titleCase(lab[1].replace(/\bthe\b/g,'').trim());
+      if(text){
+        // place label at centroid of current path (or at pen if too few points)
+        const c = centroid(verts.length>2?verts:[pen,pen]);
+        labels.push({x:c.x,y:c.y,text});
+        commands.push({kind:'label',text:'label · '+text,ok:true});
+        return;
+      }
+    }
+    // movement command
+    const dir = findDir(part);
+    const feet = parseFeet(part);
+    if(dir && feet!==null && feet>0){
+      pen = {x: pen.x + dir.vec[0]*feet, y: pen.y + dir.vec[1]*feet};
+      verts.push({x:pen.x, y:pen.y});
+      commands.push({kind:'move',text:fmt(feet)+' ft '+dirName(dir.key),ok:true});
+      return;
+    }
+    commands.push({kind:'error',text:'unclear: "'+part+'"',ok:false});
+  }
+
+  function dirName(k){
+    if(['up','north','n','forward','top'].includes(k)) return '↑ up';
+    if(['down','south','s','back','bottom'].includes(k)) return '↓ down';
+    if(['left','west','w'].includes(k)) return '← left';
+    return '→ right';
+  }
+  function titleCase(s){return s.replace(/\b\w/g,c=>c.toUpperCase());}
+  function fmt(n){return (Math.round(n*100)/100).toString();}
+
+  function centroid(pts){
+    let x=0,y=0; pts.forEach(p=>{x+=p.x;y+=p.y;});
+    return {x:x/pts.length, y:y/pts.length};
+  }
+
+  // shoelace area (returns absolute sq ft); treats path as closed
+  function polygonArea(pts){
+    if(pts.length<3) return 0;
+    let a=0;
+    for(let i=0;i<pts.length;i++){
+      const p=pts[i], q=pts[(i+1)%pts.length];
+      a += p.x*q.y - q.x*p.y;
+    }
+    return Math.abs(a/2);
+  }
+
+  function perimeter(pts){
+    let d=0;
+    for(let i=1;i<pts.length;i++){
+      d += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y);
+    }
+    return d;
+  }
+
+  // is the path effectively closed (pen back near start)?
+  function isClosed(){
+    if(verts.length<4) return false;
+    const s=verts[0], e=verts[verts.length-1];
+    return Math.hypot(e.x-s.x, e.y-s.y) < 0.75; // within 9 inches
+  }
+
+  // ---------- drawing ----------
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    drawPaper();
+
+    // compute transform: fit feet-space into canvas with padding
+    const pad = 46;
+    let minX=0,maxX=0,minY=0,maxY=0;
+    verts.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
+    const spanX = Math.max(maxX-minX, 1), spanY = Math.max(maxY-minY, 1);
+    const scale = Math.min((W-pad*2)/spanX, (H-pad*2)/spanY);
+    const s = isFinite(scale)&&scale>0 ? scale : 10;
+    const cx = (W - (minX+maxX)*s)/2;
+    const cy = (H + (minY+maxY)*s)/2; // flip y
+    const T = p => ({X: cx + p.x*s, Y: cy - p.y*s});
+
+    const closed = isClosed();
+
+    // filled room
+    if(verts.length>2){
+      ctx.beginPath();
+      verts.forEach((p,i)=>{const t=T(p); i?ctx.lineTo(t.X,t.Y):ctx.moveTo(t.X,t.Y);});
+      if(closed) ctx.closePath();
+      ctx.fillStyle = closed ? 'rgba(42,157,143,.10)' : 'rgba(20,41,63,.05)';
+      ctx.fill();
+    }
+
+    // walls
+    ctx.lineWidth = 2.4; ctx.strokeStyle = 'var(--ink)'; ctx.strokeStyle = '#14293f';
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.beginPath();
+    verts.forEach((p,i)=>{const t=T(p); i?ctx.lineTo(t.X,t.Y):ctx.moveTo(t.X,t.Y);});
+    if(closed) ctx.closePath();
+    ctx.stroke();
+
+    // dimension labels on each segment
+    ctx.font = '600 11px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#2f4a63';
+    for(let i=1;i<verts.length;i++){
+      const a=T(verts[i-1]), b=T(verts[i]);
+      const len = Math.hypot(verts[i].x-verts[i-1].x, verts[i].y-verts[i-1].y);
+      const mx=(a.X+b.X)/2, my=(a.Y+b.Y)/2;
+      const horiz = Math.abs(a.Y-b.Y) < Math.abs(a.X-b.X);
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      const label = fmt(len)+"'";
+      const off=13;
+      ctx.save();
+      ctx.fillStyle='rgba(244,241,232,.9)';
+      const tw=ctx.measureText(label).width+8;
+      ctx.fillRect(mx-tw/2, (horiz?my-off:my)-8, tw, 16);
+      ctx.restore();
+      ctx.fillStyle='#14293f';
+      ctx.fillText(label, mx, horiz?my-off:my);
+    }
+
+    // vertices
+    verts.forEach((p,i)=>{
+      const t=T(p);
+      ctx.beginPath(); ctx.arc(t.X,t.Y,3,0,7); 
+      ctx.fillStyle = i===0 ? '#14293f' : '#5a6b7a'; ctx.fill();
+    });
+
+    // room / freehand labels
+    ctx.font='700 14px "Space Grotesk", sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    labels.forEach(l=>{
+      const t=T(l);
+      ctx.fillStyle='#14293f';
+      ctx.fillText(l.text, t.X, t.Y);
+    });
+
+    // live pen
+    const tp=T(pen);
+    ctx.beginPath(); ctx.arc(tp.X,tp.Y,6,0,7);
+    ctx.fillStyle='rgba(228,87,46,.18)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tp.X,tp.Y,3.5,0,7);
+    ctx.fillStyle='#e4572e'; ctx.fill();
+
+    updateReadout(closed);
+  }
+
+  function drawPaper(){
+    ctx.fillStyle='#f4f1e8'; ctx.fillRect(0,0,W,H);
+    const step=22;
+    ctx.lineWidth=1;
+    ctx.strokeStyle='#e0dac9';
+    ctx.beginPath();
+    for(let x=0;x<W;x+=step){ctx.moveTo(x,0);ctx.lineTo(x,H);}
+    for(let y=0;y<H;y+=step){ctx.moveTo(0,y);ctx.lineTo(W,y);}
+    ctx.stroke();
+    ctx.strokeStyle='#d0c8b2';
+    ctx.beginPath();
+    for(let x=0;x<W;x+=step*5){ctx.moveTo(x,0);ctx.lineTo(x,H);}
+    for(let y=0;y<H;y+=step*5){ctx.moveTo(0,y);ctx.lineTo(W,y);}
+    ctx.stroke();
+  }
+
+  function updateReadout(closed){
+    const last = commands.filter(c=>c.kind==='move').slice(-1)[0];
+    document.getElementById('rHead').textContent = last ? last.text.split(' ').slice(-1)[0] : '—';
+    document.getElementById('rPerim').textContent = fmt(perimeter(verts))+' ft';
+    const areaLine = document.getElementById('rAreaLine');
+    if(closed){
+      areaLine.style.display='block';
+      document.getElementById('rArea').textContent = Math.round(polygonArea(verts)).toLocaleString()+' sq ft';
+    } else {
+      areaLine.style.display='none';
+    }
+  }
+
+  // ---------- log ----------
+  function renderLog(){
+    const el=document.getElementById('log');
+    if(!commands.length){el.innerHTML='<div class="empty">No commands yet.</div>';return;}
+    el.innerHTML = commands.map((c,i)=>
+      `<div class="entry ${c.kind}"><span class="n">${String(i+1).padStart(2,'0')}</span><span class="cmd">${c.text}</span></div>`
+    ).join('');
+  }
+  function scrollLog(){const el=document.getElementById('log');el.scrollTop=el.scrollHeight;}
+
+  // ---------- controls ----------
+  document.getElementById('undo').onclick=()=>{
+    if(!commands.length) return;
+    const c=commands.pop();
+    if(c.kind==='move'){ verts.pop(); pen = verts[verts.length-1] ? {...verts[verts.length-1]} : {x:0,y:0}; }
+    else if(c.kind==='label'){ labels.pop(); }
+    draw(); renderLog();
+  };
+  document.getElementById('clear').onclick=()=>{
+    verts=[{x:0,y:0}]; labels=[]; commands=[]; pen={x:0,y:0};
+    draw(); renderLog();
+    document.getElementById('heard').textContent='Cleared. Ready for a new sketch.';
+  };
+  document.getElementById('sample').onclick=()=>{
+    verts=[{x:0,y:0}]; labels=[]; commands=[]; pen={x:0,y:0};
+    handleUtterance("15.2 feet up, 20.4 feet right, 15.2 feet down, 20.4 feet left, label Living Room");
+    document.getElementById('heard').innerHTML='Ran sample: <b>"15.2 up, 20.4 right, 15.2 down, 20.4 left, label Living Room"</b>';
+  };
+
+  // text input
+  function runTyped(){
+    const inp=document.getElementById('typeIn');
+    const v=inp.value.trim();
+    if(!v) return;
+    document.getElementById('heard').innerHTML='Typed: <b>'+v+'</b>';
+    handleUtterance(v);
+    inp.value='';
+  }
+  document.getElementById('typeGo').onclick=runTyped;
+  document.getElementById('typeIn').addEventListener('keydown',e=>{if(e.key==='Enter')runTyped();});
+
+  // ---------- voice ----------
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const mic=document.getElementById('mic');
+  const micLabel=document.getElementById('micLabel');
+  const heard=document.getElementById('heard');
+
+  if(!SR){
+    micLabel.textContent='Voice not supported here';
+    mic.style.opacity=.55;
+    mic.disabled=true;
+    heard.textContent='This browser has no speech engine — use the text box below (Chrome or Android work best for voice).';
+  } else {
+    const rec=new SR();
+    rec.lang='en-US'; rec.interimResults=true; rec.continuous=false;
+    let listening=false, finalText='';
+
+    function start(){
+      if(listening) return;
+      finalText='';
+      try{rec.start();}catch(e){}
+    }
+    function stop(){ try{rec.stop();}catch(e){} }
+
+    rec.onstart=()=>{listening=true;mic.classList.add('listening');micLabel.textContent='Listening…';heard.textContent='…';};
+    rec.onend=()=>{
+      listening=false;mic.classList.remove('listening');micLabel.textContent='Hold to speak';
+      if(finalText.trim()){heard.innerHTML='Heard: <b>'+finalText+'</b>';handleUtterance(finalText);}
+    };
+    rec.onerror=(e)=>{heard.textContent='Mic error: '+e.error+' — try the text box.';};
+    rec.onresult=(e)=>{
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const r=e.results[i];
+        if(r.isFinal) finalText+=r[0].transcript;
+        else interim+=r[0].transcript;
+      }
+      heard.textContent = (finalText+interim) || '…';
+    };
+
+    // press-and-hold on touch, click-to-toggle on desktop
+    mic.addEventListener('mousedown',e=>{e.preventDefault();start();});
+    mic.addEventListener('mouseup',e=>{e.preventDefault();stop();});
+    mic.addEventListener('mouseleave',()=>{if(listening)stop();});
+    mic.addEventListener('touchstart',e=>{e.preventDefault();start();},{passive:false});
+    mic.addEventListener('touchend',e=>{e.preventDefault();stop();},{passive:false});
+  }
+
+  // ---------- init ----------
+  resize();
+  renderLog();
+})();
+</script>
+</body>
+</html>
