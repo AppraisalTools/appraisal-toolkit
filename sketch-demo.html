@@ -820,14 +820,23 @@
   /* ---------------- voice notes ---------------- */
   const noteText=$('noteText'),noteInterim=$('noteInterim'),noteStatus=$('noteStatus'),
         noteMic=$('noteMic'),noteMicLabel=$('noteMicLabel');
-  let noteRec=null,notesOn=false;
+  let noteRec=null,notesOn=false,noteConsumed=0;
+  const noteMobile=isMobile();
   if(SR){
-    noteRec=new SR();noteRec.lang='en-US';noteRec.interimResults=true;noteRec.continuous=true;
-    noteRec.onresult=e=>{let interim='';
-      for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
-        if(r.isFinal)appendNote(r[0].transcript);else interim+=r[0].transcript;}
-      noteInterim.textContent=interim;};
-    noteRec.onend=()=>{if(notesOn){try{noteRec.start();}catch(_){}}};   // auto-restart so long notes don't cut off
+    noteRec=new SR();noteRec.lang='en-US';noteRec.continuous=true;
+    noteRec.interimResults=!noteMobile;                 // interim previews cause churn on mobile — off there
+    noteRec.onstart=()=>{noteConsumed=0;};              // each session's result list restarts at index 0
+    noteRec.onresult=e=>{
+      let interim='';
+      for(let i=0;i<e.results.length;i++){
+        const r=e.results[i];
+        if(r.isFinal){
+          if(i>=noteConsumed){appendNote(r[0].transcript);noteConsumed=i+1;} // append each final once
+        }else if(!noteMobile){interim+=r[0].transcript;}
+      }
+      noteInterim.textContent=interim;
+    };
+    noteRec.onend=()=>{noteConsumed=0;if(notesOn){try{noteRec.start();}catch(_){}}}; // auto-restart for long notes
     noteRec.onerror=e=>{
       if(e.error==='not-allowed'||e.error==='service-not-allowed'){notesOn=false;setNoteUI();
         noteStatus.textContent='Microphone blocked — allow mic access, then press Start again.';}
