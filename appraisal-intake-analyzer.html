@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Order Process</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1f2435;
+    --border: #2a3045;
+    --border-active: #4a6fa5;
+    --accent: #4a9eff;
+    --accent2: #5bc8a0;
+    --warn: #e8a240;
+    --danger: #e05555;
+    --text: #e8eaf0;
+    --text-dim: #7a849a;
+    --text-label: #a0aec0;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 20px 40px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(74,110,165,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(91,200,160,0.05) 0%, transparent 50%);
+  }
+
+  .app-header {
+    width: 100%; max-width: 980px;
+    display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px;
+  }
+  .app-title { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+  .app-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+    color: var(--accent); text-transform: uppercase;
+  }
+
+  /* ── Control bar ── */
+  .control-bar {
+    width: 100%; max-width: 980px;
+    display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .ctrl-group {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px;
+  }
+  .ctrl-group.key-group { flex: 1; min-width: 260px; }
+  .ctrl-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-label); text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
+  }
+  .ctrl-input {
+    flex: 1; background: transparent; border: none; color: var(--text);
+    font-family: var(--mono); font-size: 12px; outline: none; min-width: 0;
+  }
+  .ctrl-input::placeholder { color: var(--text-dim); }
+  .ctrl-model {
+    background: transparent; border: none; color: var(--text-dim);
+    font-family: var(--mono); font-size: 11px; outline: none; cursor: pointer;
+  }
+  .ctrl-model option { background: var(--surface); color: var(--text); }
+  .api-status { font-size: 10px; font-family: var(--mono); white-space: nowrap; flex-shrink: 0; }
+  .api-status.ok { color: var(--accent2); }
+  .api-status.missing { color: var(--text-dim); }
+
+  /* ── Order-type toggle ── */
+  .mode-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .mode-btn {
+    background: var(--surface); color: var(--text-dim); border: none;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 9px 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .mode-btn.active { background: var(--accent); color: #fff; }
+  .mode-btn.active.private { background: var(--accent2); color: #0f1117; }
+
+  /* ── Upload ── */
+  .upload-row {
+    width: 100%; max-width: 980px;
+    display: flex; gap: 8px; margin-bottom: 10px; align-items: stretch;
+  }
+  .upload-zone {
+    flex: 1; border: 1px dashed var(--border); border-radius: 8px;
+    padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; position: relative; transition: border-color 0.2s, background 0.2s;
+    background: var(--surface); min-height: 46px; flex-wrap: wrap;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent); background: rgba(74,158,255,0.04);
+  }
+  .upload-zone.has-file { border-color: var(--accent2); border-style: solid; }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { font-size: 16px; flex-shrink: 0; opacity: 0.7; }
+  .upload-text {
+    font-family: var(--mono); font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em;
+  }
+  .upload-hint {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    margin-left: auto; opacity: 0.6; flex-shrink: 0;
+  }
+  .file-chip {
+    position: relative; z-index: 2;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(91,200,160,0.10); border: 1px solid rgba(91,200,160,0.35);
+    border-radius: 5px; padding: 3px 8px;
+    font-family: var(--mono); font-size: 10px; color: var(--accent2);
+  }
+  .file-chip button {
+    background: none; border: none; color: var(--accent2); cursor: pointer;
+    font-size: 13px; line-height: 1; padding: 0; opacity: 0.7;
+  }
+  .file-chip button:hover { opacity: 1; color: var(--danger); }
+
+  .analyze-btn {
+    flex-shrink: 0; padding: 0 24px; background: var(--accent); color: #fff;
+    border: none; border-radius: 8px; font-family: var(--mono); font-size: 11px;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    transition: background 0.18s, opacity 0.18s; white-space: nowrap; min-height: 46px;
+  }
+  .analyze-btn:hover { background: #3a8eef; }
+  .analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Progress / error ── */
+  .progress-bar-wrap {
+    width: 100%; max-width: 980px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;
+    margin-bottom: 10px; display: none;
+  }
+  .progress-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text-label);
+    margin-bottom: 7px; letter-spacing: 0.08em;
+  }
+  .progress-track { width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px; transition: width 0.3s ease; width: 0%;
+  }
+  .error-box {
+    width: 100%; max-width: 980px; background: rgba(224,85,85,0.1);
+    border: 1px solid rgba(224,85,85,0.3); border-radius: 8px; padding: 10px 16px;
+    font-family: var(--mono); font-size: 12px; color: var(--danger);
+    margin-bottom: 10px; display: none;
+  }
+
+  /* ── Results ── */
+  .results-panel { width: 100%; max-width: 980px; display: none; }
+  .results-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap;
+  }
+  .results-title {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+    color: var(--accent); text-transform: uppercase;
+  }
+  .results-actions { display: flex; gap: 6px; align-items: center; }
+  .copy-all-btn, .reset-btn {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-label); font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 11px;
+    cursor: pointer; transition: all 0.18s;
+  }
+  .copy-all-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .reset-btn { background: transparent; color: var(--text-dim); }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Export / download bar ── */
+  .export-bar {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+  }
+  .export-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-dim); text-transform: uppercase; margin-right: 2px;
+  }
+  .exp-btn {
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+    font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 8px 14px; cursor: pointer; transition: all 0.18s;
+  }
+  .exp-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .exp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .exp-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .exp-btn.primary:hover { background: #3a8eef; color: #fff; }
+  .exp-btn.valuator:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── Sections / cards ── */
+  .section { margin-bottom: 18px; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; }
+  .section-num {
+    font-family: var(--mono); font-size: 10px; color: var(--bg);
+    background: var(--accent); border-radius: 3px; padding: 1px 6px; font-weight: 600;
+  }
+  .section-num.green { background: var(--accent2); }
+  .section-title {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+    color: var(--text); text-transform: uppercase;
+  }
+  .section-rule { flex: 1; height: 1px; background: var(--border); }
+
+  .result-grid { display: flex; flex-direction: column; gap: 6px; }
+  .result-row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .result-row-triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .result-row-full { display: grid; grid-template-columns: 1fr; }
+
+  .result-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+    transition: border-color 0.18s;
+  }
+  .result-card:hover { border-color: var(--border-active); }
+  .result-card.match    { border-left: 3px solid var(--accent2); }
+  .result-card.mismatch { border-left: 3px solid var(--danger); }
+  .result-card.neutral  { border-left: 3px solid var(--border-active); }
+  .result-card.warn     { border-left: 3px solid var(--warn); }
+
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .result-field {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--text-label); text-transform: uppercase;
+  }
+  .card-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .result-badge {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+  }
+  .badge-match   { background: rgba(91,200,160,0.15); color: var(--accent2); }
+  .badge-found   { background: rgba(74,158,255,0.12); color: var(--accent); }
+  .badge-missing { background: rgba(122,132,154,0.15); color: var(--text-dim); }
+  .badge-warn    { background: rgba(232,162,64,0.15); color: var(--warn); }
+
+  .copy-field-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-dim); font-size: 10px; padding: 2px 7px; cursor: pointer;
+    font-family: var(--mono); transition: all 0.15s; white-space: nowrap;
+  }
+  .copy-field-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .result-value { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .result-value.not-found { color: var(--text-dim); font-style: italic; font-size: 12px; }
+  .result-note { font-size: 11px; color: var(--warn); font-family: var(--mono); }
+
+  .item-list { display: flex; flex-direction: column; gap: 5px; }
+  .item {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
+    padding: 9px 12px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .item.stop   { border-left: 3px solid var(--danger); }
+  .item.info   { border-left: 3px solid var(--border-active); }
+  .item-head { display: flex; align-items: baseline; gap: 8px; }
+  .item-cond { font-size: 13px; color: var(--text); font-weight: 500; flex: 1; line-height: 1.45; }
+  .item-tag {
+    font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+  }
+  .item-tag.stop { background: rgba(224,85,85,0.15); color: var(--danger); }
+  .item-tag.cond { background: rgba(74,158,255,0.12); color: var(--accent); }
+  .item-comment {
+    font-size: 12px; color: var(--text); line-height: 1.5;
+    background: var(--surface2); border-radius: 5px; padding: 7px 10px; margin-top: 3px;
+    font-family: var(--mono);
+  }
+
+  .value-split { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .value-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; }
+  .value-box-title {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--text-label); text-transform: uppercase; margin-bottom: 5px;
+  }
+  .value-box-line { font-size: 12px; color: var(--text); line-height: 1.6; }
+  .placement-pill {
+    display: inline-block; font-family: var(--mono); font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.06em; padding: 1px 6px; border-radius: 3px; margin-left: 4px;
+  }
+  .placement-pill.grid { background: rgba(74,158,255,0.15); color: var(--accent); }
+  .placement-pill.addendum { background: rgba(232,162,64,0.15); color: var(--warn); }
+
+  .photo-ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; }
+  .photo-ol li { font-size: 13px; color: var(--text); line-height: 1.5; padding-left: 4px; }
+  .photo-ol li::marker { color: var(--accent); font-family: var(--mono); font-size: 11px; }
+
+  /* ── Editable JSON form ── */
+  .json-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .jf-field { display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; }
+  .jf-field.full { grid-column: 1 / -1; }
+  .jf-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    color: var(--text-label); text-transform: uppercase;
+  }
+  .jf-input, .jf-select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text); font-family: var(--mono); font-size: 12px; padding: 6px 9px; outline: none; width: 100%;
+  }
+  .jf-input:focus, .jf-select:focus { border-color: var(--accent); }
+  .jf-select option { background: var(--surface); color: var(--text); }
+  .jf-check { display: flex; align-items: center; gap: 8px; }
+  .jf-check input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+  .jf-hint { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+  .jf-derived { color: var(--accent2); }
+
+  .json-preview {
+    background: #0b0d13; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    white-space: pre; overflow-x: auto; line-height: 1.55; display: none; margin-top: 8px;
+  }
+
+  .cost-meter {
+    width: 100%; max-width: 980px; display: none; align-items: center; gap: 10px;
+    margin-top: 14px; padding: 7px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 7px;
+  }
+  .cost-meter-label {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    color: var(--text-dim); text-transform: uppercase;
+  }
+  .cost-cell-value.total-cost {
+    font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent2);
+  }
+  .cost-reset-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding: 2px 7px;
+    cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase;
+    transition: all 0.15s; margin-left: auto;
+  }
+  .cost-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .raw-toggle {
+    background: transparent; border: 1px solid var(--border); border-radius: 5px;
+    color: var(--text-dim); font-family: var(--mono); font-size: 10px; padding: 5px 11px;
+    cursor: pointer; letter-spacing: 0.08em; text-transform: uppercase;
+    transition: all 0.18s; margin: 12px 8px 8px 0;
+  }
+  .raw-toggle:hover { border-color: var(--border-active); color: var(--text); }
+  .raw-output {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; font-family: var(--mono); font-size: 11px; color: var(--text-dim);
+    white-space: pre-wrap; line-height: 1.6; display: none; margin-bottom: 16px;
+  }
+
+  @media (max-width: 720px) {
+    .result-row-pair, .result-row-triple, .value-split, .json-form { grid-template-columns: 1fr; }
+    .control-bar { flex-wrap: wrap; }
+  }
+
+  /* ── Export sheet (light theme, rendered to PNG) ── */
+  #exportSheet {
+    position: fixed; left: -11000px; top: 0; width: 760px;
+    background: #ffffff; color: #1b1e27; font-family: var(--sans); padding: 26px 30px;
+  }
+  #exportSheet * { box-sizing: border-box; }
+  .ex-head { border-bottom: 2px solid #1b1e27; padding-bottom: 9px; margin-bottom: 12px; }
+  .ex-role { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #2f6fb0; margin-bottom: 4px; }
+  .ex-role.green { color: #1f8a5c; }
+  .ex-h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: #12141b; margin-bottom: 5px; }
+  .ex-meta { font-size: 10.5px; color: #48505f; line-height: 1.5; }
+  .ex-meta b { color: #1b1e27; font-weight: 600; }
+  .ex-date { float: right; font-family: var(--mono); font-size: 9px; color: #8a92a3; letter-spacing: 0.06em; text-align: right; }
+  .ex-sec { margin-bottom: 11px; }
+  .ex-sec-h { font-family: var(--mono); font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: #2f6fb0; border-bottom: 1px solid #d8dde6; padding-bottom: 3px; margin-bottom: 6px; }
+  .ex-sec-h.green { color: #1f8a5c; }
+  .ex-kv { display: grid; grid-template-columns: 140px 1fr; gap: 3px 12px; font-size: 11px; }
+  .ex-kv .k { font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: #7a8494; padding-top: 1px; }
+  .ex-kv .v { color: #1b1e27; line-height: 1.4; }
+  .ex-line { padding: 4px 0 4px 10px; border-left: 3px solid #c8cfda; margin-bottom: 3px; font-size: 11px; line-height: 1.4; color: #1b1e27; }
+  .ex-line.stop { border-left-color: #c0392b; }
+  .ex-line .tag { font-family: var(--mono); font-size: 8px; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; margin-right: 6px; }
+  .ex-line.stop .tag { background: #fbe4e1; color: #c0392b; }
+  .ex-ol { margin: 0; padding-left: 18px; }
+  .ex-ol li { font-size: 11px; line-height: 1.45; color: #1b1e27; margin-bottom: 2px; }
+  .ex-ol li::marker { color: #2f6fb0; font-family: var(--mono); font-size: 10px; }
+  .ex-comps-line { font-size: 11px; color: #1b1e27; line-height: 1.5; margin-bottom: 3px; }
+  .ex-comps-line b { color: #12141b; }
+  .ex-split { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 5px; }
+  .ex-box { border: 1px solid #d8dde6; border-radius: 6px; padding: 7px 10px; background: #f7f9fc; }
+  .ex-box .t { font-family: var(--mono); font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; color: #7a8494; margin-bottom: 3px; }
+  .ex-box .n { font-size: 11.5px; color: #1b1e27; }
+  .ex-box .pill { font-family: var(--mono); font-size: 8px; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; }
+  .ex-box .pill.grid { background: #e2eefb; color: #2f6fb0; }
+  .ex-box .pill.addendum { background: #fbf0da; color: #a8720f; }
+  .ex-note { font-size: 9.5px; color: #5a6373; line-height: 1.45; margin-top: 5px; font-style: italic; }
+  .ex-comm { margin-bottom: 4px; font-size: 9.5px; line-height: 1.32; }
+  .ex-comm .topic { font-weight: 600; color: #12141b; }
+  .ex-comm .cond { font-family: var(--mono); font-size: 8px; color: #a8720f; margin-left: 4px; }
+  .ex-comm .body { color: #33393f; margin-top: 1px; font-size: 9.5px; }
+  .ex-foot { margin-top: 11px; padding-top: 7px; border-top: 1px solid #d8dde6; font-family: var(--mono); font-size: 8.5px; color: #9aa2b1; letter-spacing: 0.04em; }
+  /* contract-summary specific */
+  .ex-badge { display: inline-block; font-family: var(--mono); font-size: 8px; letter-spacing: 0.05em; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+  .ex-badge.match { background: #dff3e8; color: #1f8a5c; }
+  .ex-badge.mismatch { background: #fbe4e1; color: #c0392b; }
+  .ex-badge.warn { background: #fbf0da; color: #a8720f; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">New Order Process</div>
+  <div class="app-label">Engagement · Contract · Order JSON</div>
+</div>
+
+<div class="control-bar">
+  <div class="ctrl-group key-group">
+    <span class="ctrl-label">API Key</span>
+    <input type="password" class="ctrl-input" id="apiKey" placeholder="sk-ant-..." oninput="updateApiStatus()" />
+    <span class="api-status missing" id="apiStatus">Not set</span>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Model</span>
+    <select class="ctrl-model" id="modelSelect">
+      <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+      <option value="claude-opus-4-8">Opus 4.8</option>
+      <option value="claude-sonnet-5">Sonnet 5</option>
+    </select>
+  </div>
+  <div class="mode-toggle" id="modeToggle">
+    <button class="mode-btn active" data-mode="lender" onclick="setMode('lender')">Lender / AMC</button>
+    <button class="mode-btn" data-mode="private" onclick="setMode('private')">Private</button>
+  </div>
+</div>
+
+<div class="upload-row">
+  <div class="upload-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".pdf" multiple onchange="handleFiles(this.files)" />
+    <span class="upload-icon">📄</span>
+    <span class="upload-text" id="uploadText">Drop the engagement letter, purchase contract & any related PDFs</span>
+    <span class="upload-hint" id="uploadHint">PDF · max 12</span>
+  </div>
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>Analyze</button>
+</div>
+
+<div class="progress-bar-wrap" id="progressWrap">
+  <div class="progress-label" id="progressLabel">Reading PDFs...</div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="error-box" id="errorBox"></div>
+
+<div class="results-panel" id="resultsPanel">
+  <div class="results-header">
+    <span class="results-title">Intake Analysis</span>
+    <div class="results-actions">
+      <button class="copy-all-btn" onclick="copyAll()">Copy Summary</button>
+      <button class="reset-btn" onclick="resetTool()">New Intake</button>
+    </div>
+  </div>
+
+  <div class="export-bar">
+    <span class="export-label">Generate:</span>
+    <button class="exp-btn primary" id="genAllBtn" onclick="generateAll()">⬇ Generate All</button>
+    <button class="exp-btn valuator" id="dlValBtn" onclick="downloadSheet('valuator')">Valuator PNG</button>
+    <button class="exp-btn" id="dlInsBtn" onclick="downloadSheet('inspector')">Inspector PNG</button>
+    <button class="exp-btn" id="dlConBtn" onclick="downloadSheet('contract')">Contract PNG</button>
+    <button class="exp-btn" id="dlJsonBtn" onclick="downloadJson()">Order JSON</button>
+  </div>
+
+</div>
+
+<div id="exportSheet" aria-hidden="true"></div>
+
+<div class="cost-meter" id="costMeter">
+  <span class="cost-meter-label">Session Cost:</span>
+  <span class="cost-cell-value total-cost" id="totalCost">$0.0000</span>
+  <button class="cost-reset-btn" onclick="resetCosts()">Reset</button>
+</div>
+
+<script>
+// ═════════════════════════════════════════════════════════════
+// Config + state
+// ═════════════════════════════════════════════════════════════
+const MAX_FILES = 12;
+let currentFiles = [];
+let mode = 'lender';           // 'lender' | 'private'
+let lastRaw = '';
+let R = null;                  // combined result: { engagement, contract, pass1 }
+
+// Pricing ($/M) — Sonnet 4.6 default. Estimate only.
+const COST_PER_M_INPUT = 3.00;
+const COST_PER_M_OUTPUT = 15.00;
+let session = { inputTokens: 0, outputTokens: 0, runs: 0 };
+
+// Interior vs exterior inference from the primary form number.
+// Allowed transaction types for the inspection_type field.
+const TRANSACTION_TYPES = ['Purchase','Refinance','HELOC','Home Equity','Construction','Renovation','As Is/As Repaired','REO','Reverse','Investment','Servicing','Asset Valuation','Tax Assessment','Desktop'];
+
+// ═════════════════════════════════════════════════════════════
+// Mode toggle
+// ═════════════════════════════════════════════════════════════
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    const on = b.dataset.mode === m;
+    b.classList.toggle('active', on);
+    b.classList.toggle('private', m === 'private' && on);
+  });
+  // If we already have results, re-render the JSON form for the new template.
+  if (R) { buildJsonForm(); refreshExportButtons(); }
+}
+
+// ═════════════════════════════════════════════════════════════
+// File batch handling (native PDF document blocks)
+// ═════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(fileList) {
+  for (const f of fileList) {
+    if (f.type !== 'application/pdf') continue;
+    if (currentFiles.length >= MAX_FILES) break;
+    if (currentFiles.some(x => x.name === f.name && x.size === f.size)) continue;
+    currentFiles.push(f);
+  }
+  document.getElementById('fileInput').value = '';
+  renderFileChips();
+  updateAnalyzeBtn();
+}
+function removeFile(idx) { currentFiles.splice(idx, 1); renderFileChips(); updateAnalyzeBtn(); }
+
+function renderFileChips() {
+  const zone = document.getElementById('dropZone');
+  const txt = document.getElementById('uploadText');
+  const hint = document.getElementById('uploadHint');
+  zone.querySelectorAll('.file-chip').forEach(c => c.remove());
+  if (currentFiles.length === 0) {
+    txt.style.display = '';
+    zone.classList.remove('has-file');
+    hint.textContent = 'PDF · max ' + MAX_FILES;
+    return;
+  }
+  txt.style.display = 'none';
+  zone.classList.add('has-file');
+  currentFiles.forEach((f, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'file-chip';
+    chip.innerHTML = `📎 ${esc(f.name)} <button onclick="removeFile(${i});event.stopPropagation();">×</button>`;
+    zone.insertBefore(chip, hint);
+  });
+  hint.textContent = `${currentFiles.length}/${MAX_FILES}`;
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Could not read ' + file.name));
+    r.readAsDataURL(file);
+  });
+}
+async function buildDocBlocks() {
+  const blocks = [];
+  for (const f of currentFiles) {
+    blocks.push({
+      type: 'document',
+      source: { type: 'base64', media_type: 'application/pdf', data: await fileToBase64(f) },
+      title: f.name
+    });
+  }
+  return blocks;
+}
+
+// ═════════════════════════════════════════════════════════════
+// UI state helpers
+// ═════════════════════════════════════════════════════════════
+function updateApiStatus() {
+  const key = document.getElementById('apiKey').value.trim();
+  const status = document.getElementById('apiStatus');
+  if (key.startsWith('sk-ant-') && key.length > 20) {
+    status.textContent = '✓ Ready'; status.className = 'api-status ok';
+  } else {
+    status.textContent = 'Not set'; status.className = 'api-status missing';
+  }
+  updateAnalyzeBtn();
+}
+function updateAnalyzeBtn() {
+  const key = document.getElementById('apiKey').value.trim();
+  const hasKey = key.startsWith('sk-ant-') && key.length > 20;
+  document.getElementById('analyzeBtn').disabled = !(hasKey && currentFiles.length > 0);
+}
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+function calcCost(i, o) { return (i/1e6*COST_PER_M_INPUT) + (o/1e6*COST_PER_M_OUTPUT); }
+function updateCostMeter(i, o) {
+  session.inputTokens += i; session.outputTokens += o; session.runs += 1;
+  document.getElementById('totalCost').textContent = '$' + calcCost(session.inputTokens, session.outputTokens).toFixed(4);
+  document.getElementById('costMeter').style.display = 'flex';
+}
+function resetCosts() {
+  session = { inputTokens: 0, outputTokens: 0, runs: 0 };
+  document.getElementById('totalCost').textContent = '$0.0000';
+  document.getElementById('costMeter').style.display = 'none';
+}
+
+// ═════════════════════════════════════════════════════════════
+// API helper
+// ═════════════════════════════════════════════════════════════
+async function callClaude(apiKey, model, system, content, maxTokens) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] })
+  });
+  if (!response.ok) {
+    let msg; try { msg = (await response.json()).error?.message; } catch { msg = null; }
+    throw new Error(msg || `API error ${response.status}`);
+  }
+  const data = await response.json();
+  const text = data.content.find(b => b.type === 'text')?.text || '';
+  updateCostMeter(data.usage?.input_tokens || 0, data.usage?.output_tokens || 0);
+  return text;
+}
+function parseJson(raw) { return JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+
+// ═════════════════════════════════════════════════════════════
+// Prompts
+// ═════════════════════════════════════════════════════════════
+const PASS1_SYSTEM = `You are an expert appraisal reviewer. Respond with a valid JSON object only — no markdown, no prose outside the JSON.`;
+
+const PASS1_USER = `You are given one or more PDFs that together make up an appraisal order package: an ORDER FORM stating the product ordered, LENDER/AMC INSTRUCTIONS, and possibly a purchase contract. A single PDF may contain several of these. Ignore the purchase contract for this step.
+
+FORM REFERENCE
+Primary report forms (define the assignment): 1004 (URAR, 1-unit), 1025 (2–4 unit income), 1073 (condo), 1004C (manufactured), 2055 (exterior-only 1-unit), 1075 (exterior condo), 2090/2095 (co-op).
+Companion forms (add-ons, never a standalone assignment): 1007 (comparable rent schedule), 216 (operating income), 1004D (update/completion), 1004MC (market conditions addendum).
+
+TASK — identify what was ordered and grab the order-form administrative fields. Do NOT extract appraisal requirements here.
+1. Find the ORDER FORM / order detail page (look for "Job Type", "General Information", order number, fee, due date). If there is no order form and you only have instruction text that refers to one, set order_form_found=false and forms=[] and explain in notes.
+2. List every ordered form; mark each "primary" or "companion". A bundle like "1004 + 1007 + 216" is ONE assignment. If instructions explicitly REQUIRE a companion form, include it as companion.
+3. Determine assignment_type and loan_type. For assignment_type, classify the transaction/assignment purpose as EXACTLY ONE of: Purchase, Refinance, HELOC, Home Equity, Construction, Renovation, As Is/As Repaired, REO, Reverse, Investment, Servicing, Asset Valuation, Tax Assessment, Desktop. If none clearly fits, use the purpose stated verbatim. loan_type is the financing type (Conventional, FHA, VA, USDA, Private Money, etc.). Prefer explicit fields (FHA case number, transaction purpose, loan type) over prose.
+4. Pull administrative fields from the order form where present: order_number, fee (the appraisal fee to the appraiser, digits only), due_date (as written), and the ordering contact (name, phone, email). inspection_type = "Interior" or "Exterior" if stated on the order (else null — it will be inferred from the form).
+
+Return ONLY this JSON:
+{
+  "order_form_found": true | false,
+  "forms": [ { "form_number": "1004", "form_name": "...", "role": "primary" | "companion" } ],
+  "assignment_type": "string or null",
+  "loan_type": "string or null",
+  "order_number": "string or null",
+  "fee": "number or null",
+  "due_date": "string or null",
+  "inspection_type": "Interior | Exterior | null",
+  "contact_name": "string or null",
+  "contact_phone": "string or null",
+  "contact_email": "string or null",
+  "notes": "any ambiguity, e.g. order form vs cover-page mismatch, or missing order form"
+}`;
+
+const PASS2_SYSTEM = `You are an expert appraisal reviewer analyzing lender/AMC engagement documents for a licensed appraiser. Respond with a valid JSON object only — no markdown, no prose outside the JSON. Report ONLY what is explicitly stated; never invent a requirement. Use null or empty arrays where something is not stated.`;
+
+function pass2User(pass1) {
+  return `Analyze the attached engagement PDFs and produce a complete, SCOPE-CORRECT summary. Ignore any purchase contract in the package for this step except to confirm the subject address.
+
+WHAT WAS ORDERED (established in a prior step — treat as ground truth):
+${JSON.stringify(pass1, null, 2)}
+
+SCOPING RULES — CRITICAL
+- Apply ONLY requirement sections relevant to the ordered form(s) above.
+- Explicitly IGNORE requirement blocks written for form types that were NOT ordered.
+- Watch for location/transaction scoping: a state-specific comment applies only if the SUBJECT is in that state; a purchase-only instruction does not apply to a refinance. When a section clearly does not apply, do NOT list it — add a short review_flag noting it was excluded and why.
+- If applicability is genuinely unclear, do NOT apply it — add a review_flag.
+- If order_form_found is false, leave forms as given, set assignment_type/loan_type only if stated unambiguously, and add a review_flag that the order form is missing.
+
+DEFINITIONS
+- hard_stops: conditions requiring you to STOP, DECLINE, or not accept the assignment.
+- contact_if: conditions requiring you to CONTACT the AMC/client before proceeding, but not necessarily stop.
+- as_is_as_repaired.applies = true ONLY if BOTH an as-is and an as-repaired/ARV/as-completed value are required. Capture comp counts for each side and whether each value goes on the "grid" or in the "addendum".
+- closed_sales_required: ALWAYS populate with the number of closed-sale comps required on the GRID for the primary value. Even with both as-is and as-repaired values, set closed_sales_required to the gridded closed-sale count AND still fill the breakdown. active_listings_required: number of active-listing comps, or null.
+- required_subject_photos: photos required of the SUBJECT. Exclude photo sets tied to un-ordered forms/property types.
+- specific_commentary: required client language and conditional comments. Put the trigger in "condition" (empty string if it always applies). DO NOT include ANSI / Z765 measurement-standard commentary — omit it entirely.
+- flood_map_alt_required: true if the instructions require a flood map, flood certification, or an alternative flood-map exhibit; else false.
+- assigned_to: the name of the appraiser this assignment is assigned/addressed to. Look for "Assigned Appraiser", "Appraiser:", "Assigned To", "Vendor", the signature/vendor block, or the individual the engagement letter is addressed to. Return the person's name only, or null if not stated.
+- assignment_type: classify the transaction/assignment purpose as EXACTLY ONE of: Purchase, Refinance, HELOC, Home Equity, Construction, Renovation, As Is/As Repaired, REO, Reverse, Investment, Servicing, Asset Valuation, Tax Assessment, Desktop. If none clearly fits, use the purpose stated verbatim.
+- additional_forms: companion/additional forms required beyond the primary report form — e.g. "1007", "216", "1004MC", or "REO Addendum". Use the form number, or a short name when it has no number. Empty array if none.
+
+For hard_stops, contact_if, and specific_commentary, include a short verbatim source_quote.
+
+Return ONLY this JSON (keys exactly as shown):
+{
+  "assignment_information": {
+    "forms": [ { "form_number": "", "form_name": "", "role": "primary|companion" } ],
+    "additional_forms": ["..."],
+    "subject_property_address": "string or null",
+    "assignment_type": "string or null",
+    "loan_type": "string or null",
+    "amc": "string or null",
+    "lender_client_name": "string or null",
+    "lender_client_address": "string or null",
+    "assigned_to": "string or null",
+    "borrower_names": ["..."]
+  },
+  "stop_and_contact_issues": {
+    "hard_stops": [ { "condition": "", "source_quote": "" } ],
+    "contact_if": [ { "condition": "", "action": "", "source_quote": "" } ]
+  },
+  "comps": {
+    "closed_sales_required": integer or null,
+    "active_listings_required": integer or null,
+    "distance_or_recency_rules": "string or null",
+    "as_is_as_repaired": {
+      "applies": true|false,
+      "as_is":       { "closed_sales": integer|null, "listings": integer|null, "placement": "grid|addendum|unspecified" },
+      "as_repaired": { "closed_sales": integer|null, "listings": integer|null, "placement": "grid|addendum|unspecified" },
+      "notes": "string"
+    }
+  },
+  "required_subject_photos": ["..."],
+  "specific_commentary": [ { "topic": "", "condition": "", "required_comment": "", "source_quote": "" } ],
+  "flood_map_alt_required": true|false,
+  "review_flags": ["..."]
+}`;
+}
+
+const PASS3_SYSTEM = `You are a real estate contract analyst assisting a licensed real estate appraiser. Read purchase contracts (NC or SC standard forms, or custom builder contracts) and extract specific fields with clean, minimal output. Respond with a valid JSON object only — no markdown, no prose outside the JSON.`;
+
+function pass3User(subjectAddr) {
+  const addrLine = subjectAddr
+    ? `The subject property address (from the order/engagement) is: "${subjectAddr}". Compare it to the contract address and note whether they match.`
+    : 'No subject address was established elsewhere — set address_match to "UNABLE TO VERIFY".';
+  return `Among the attached PDFs, find the PURCHASE / SALE CONTRACT (ignore the engagement letter and order form) and extract the following.
+${addrLine}
+
+Return ONLY a JSON object with exactly these keys:
+{
+  "contract_found": true | false,
+  "contract_address": "Full property address as written in the contract, or null",
+  "address_match": "YES" | "NO" | "PARTIAL" | "UNABLE TO VERIFY",
+  "address_note": "Brief note only if mismatch or issue, otherwise null",
+  "buyer_names": "Full name(s) of buyer(s)/borrower(s), or null",
+  "seller_names": "Full name(s) of seller(s), or null",
+  "sale_price": "Purchase price as dollar amount only, e.g. $350,000, or null",
+  "contract_date": "Latest signature date found — the binding date, or null",
+  "contract_date_note": "e.g. 'Buyer signed 6/1, Seller signed 6/3 — using 6/3' — or null",
+  "deposits": "List each as: $[amount] [type]. e.g. '$500 Due Diligence. $2,500 Earnest Money.' Single unlabeled deposit: '$15,000 Deposit'. Nothing else. Or null.",
+  "seller_concessions": "Dollar amount(s) only. If multiple, one per line as '$X,XXX [label]' then 'Total: $X,XXX'. If none, 'None'.",
+  "home_warranty": "Dollar amount only if offered, e.g. '$450 Home Warranty'. If not mentioned, 'None'.",
+  "loan_type": "One word only: Conventional, FHA, VA, USDA, or Cash. If not stated, 'Not Specified'.",
+  "personal_property": "Item names included in the sale, comma-separated, legal language stripped. If none, 'None'.",
+  "multiple_parcels": true | false,
+  "parcel_ids": ["any tax parcel / PIN numbers stated in the contract"],
+  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "confidence_note": "Note any unclear/ambiguous fields, or null"
+}
+
+Rules:
+- Deposits: type and amount only, no commentary.
+- Seller concessions: search for seller/builder money toward buyer — concessions, incentives, closing cost assistance, etc. Dollar amounts only.
+- Home warranty: check separately from concessions. Common $300–$900.
+- Loan type: one word only.
+- Personal property: copy item names exactly, no additions.
+- Contract date: use the LATEST signature date.
+- multiple_parcels: true only if the contract clearly conveys more than one tax parcel/PIN.
+- If a field is not present, use null (or the stated default above).`;
+}
+// ═════════════════════════════════════════════════════════════
+// Main orchestration
+// ═════════════════════════════════════════════════════════════
+async function analyze() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelSelect').value;
+
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = true;
+  setProgress(5, 'Reading PDFs...');
+
+  try {
+    const docBlocks = await buildDocBlocks();
+    let pass1 = null, engagement = null, contract = null;
+    const rawParts = [];
+
+    if (mode === 'lender') {
+      setProgress(18, 'Pass 1 — identifying ordered form(s)...');
+      const p1raw = await callClaude(apiKey, model, PASS1_SYSTEM,
+        [...docBlocks, { type: 'text', text: PASS1_USER }], 1400);
+      try { pass1 = parseJson(p1raw); }
+      catch { throw new Error('Pass 1 did not return valid JSON. Raw: ' + p1raw.slice(0, 300)); }
+      rawParts.push('PASS 1 — ORDER IDENTIFICATION\n' + p1raw);
+
+      setProgress(45, 'Pass 2 — extracting scoped requirements...');
+      const p2raw = await callClaude(apiKey, model, PASS2_SYSTEM,
+        [...docBlocks, { type: 'text', text: pass2User(pass1) }], 8000);
+      try { engagement = parseJson(p2raw); }
+      catch { throw new Error('Pass 2 did not return valid JSON. Raw: ' + p2raw.slice(0, 300)); }
+      rawParts.push('PASS 2 — ENGAGEMENT ANALYSIS\n' + p2raw);
+    }
+
+    // Contract pass runs in both modes.
+    const subjectAddr = engagement?.assignment_information?.subject_property_address || '';
+    setProgress(mode === 'lender' ? 75 : 40, 'Pass ' + (mode === 'lender' ? '3' : '1') + ' — reading purchase contract...');
+    const p3raw = await callClaude(apiKey, model, PASS3_SYSTEM,
+      [...docBlocks, { type: 'text', text: pass3User(subjectAddr) }], 2000);
+    try { contract = parseJson(p3raw); }
+    catch { throw new Error('Contract pass did not return valid JSON. Raw: ' + p3raw.slice(0, 300)); }
+    rawParts.push('CONTRACT ANALYSIS\n' + p3raw);
+
+    R = { pass1, engagement, contract };
+    lastRaw = rawParts.join('\n\n────────────\n\n');
+
+    setProgress(100, 'Done!');
+    setTimeout(() => {
+      document.getElementById('progressWrap').style.display = 'none';
+      renderResults();
+    }, 300);
+
+  } catch (err) {
+    document.getElementById('progressWrap').style.display = 'none';
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + err.message;
+    box.style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════
+// Derivation helpers (used by JSON form + export)
+// ═════════════════════════════════════════════════════════════
+function esc(s) { return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return esc(s).replace(/"/g,'&quot;'); }
+function has(v) { return v !== null && v !== undefined && v !== '' && v !== 'null'; }
+function notAnsi(c) {
+  const s = ((c.topic||'') + ' ' + (c.condition||'') + ' ' + (c.required_comment||'')).toLowerCase();
+  return !(s.includes('ansi') || s.includes('z765'));
+}
+function primaryForm() {
+  const forms = R?.engagement?.assignment_information?.forms || R?.pass1?.forms || [];
+  const p = forms.find(f => (f.role||'').toLowerCase() === 'primary') || forms[0];
+  return p || null;
+}
+function formTypeString() {
+  const forms = R?.engagement?.assignment_information?.forms || R?.pass1?.forms || [];
+  if (!forms.length) return '';
+  return forms.map(f => f.form_number).filter(Boolean).join(' + ');
+}
+// inspection_type = the transaction/assignment type from the engagement letter.
+function transactionType() {
+  return R?.engagement?.assignment_information?.assignment_type
+      || R?.pass1?.assignment_type || '';
+}
+function assignedTo() {
+  return R?.engagement?.assignment_information?.assigned_to || '';
+}
+// Companion/additional forms (1007, 216, REO Addendum, ...) as an array.
+function additionalForms() {
+  const ai = R?.engagement?.assignment_information || {};
+  if (Array.isArray(ai.additional_forms) && ai.additional_forms.length) return ai.additional_forms.filter(has);
+  const forms = ai.forms || R?.pass1?.forms || [];
+  return forms.filter(f => (f.role||'').toLowerCase() === 'companion').map(f => f.form_number).filter(has);
+}
+function loanTypeValue() {
+  return R?.engagement?.assignment_information?.loan_type
+      || R?.pass1?.loan_type
+      || (R?.contract && R.contract.loan_type !== 'Not Specified' ? R.contract.loan_type : null)
+      || '';
+}
+function fhaUsdaValue() {
+  const lt = (loanTypeValue() || '').toLowerCase();
+  return (lt.includes('fha') || lt.includes('usda')) ? 'Yes' : 'No';
+}
+function subjectAddress() {
+  return R?.engagement?.assignment_information?.subject_property_address
+      || R?.contract?.contract_address || '';
+}
+function borrowerName() {
+  const b = (R?.engagement?.assignment_information?.borrower_names || []).filter(has);
+  if (b.length) return b.join(', ');
+  return R?.contract?.buyer_names && R.contract.buyer_names !== 'null' ? R.contract.buyer_names : '';
+}
+
+// Build the auto-populated field object for the CURRENT mode.
+function derivedFields() {
+  const ai = R?.engagement?.assignment_information || {};
+  const c = R?.contract || {};
+  const p1 = R?.pass1 || {};
+  const common = {
+    property_address: subjectAddress(),
+    borrower_name: borrowerName(),
+    assigned_to: mode === 'private' ? '' : assignedTo(),
+    inspection_type: mode === 'private' ? '' : transactionType(),
+    additional_forms: mode === 'private' ? [] : additionalForms(),
+    loan_type: mode === 'private' ? '' : (loanTypeValue() || ''),
+    fha_usda: mode === 'private' ? 'No' : fhaUsdaValue(),
+    fee: has(p1.fee) ? p1.fee : '',
+    due_date: has(p1.due_date) ? p1.due_date : '',
+    contact_name: has(p1.contact_name) ? p1.contact_name : '',
+    contact_phone: has(p1.contact_phone) ? p1.contact_phone : '',
+    contact_email: has(p1.contact_email) ? p1.contact_email : '',
+    notes: ''
+  };
+  if (mode === 'private') {
+    return {
+      ...common,
+      order_number: '',
+      amc: 'Private',
+      lender: '',
+      form_type: 'Private Inspection',
+      how_did_you_find_us: '',
+      additional_comments: ''
+    };
+  }
+  return {
+    ...common,
+    order_number: has(p1.order_number) ? p1.order_number : '',
+    amc: has(ai.amc) ? ai.amc : '',
+    lender: has(ai.lender_client_name) ? ai.lender_client_name : '',
+    form_type: formTypeString(),
+    flood_map_alt_required: !!R?.engagement?.flood_map_alt_required,
+    multiple_parcels: !!c.multiple_parcels,
+    parcel_ids: (c.parcel_ids || []).filter(has)
+  };
+}
+// ═════════════════════════════════════════════════════════════
+// On-screen rendering
+// ═════════════════════════════════════════════════════════════
+function sectionHead(num, title, green) {
+  return `<div class="section-head"><span class="section-num ${green?'green':''}">${num}</span>
+    <span class="section-title">${title}</span><span class="section-rule"></span></div>`;
+}
+function valueCard(label, value, cls) {
+  const shown = has(value);
+  const badge = shown ? '<span class="result-badge badge-found">Found</span>'
+                      : '<span class="result-badge badge-missing">Not stated</span>';
+  const copy = shown ? `<button class="copy-field-btn" onclick="copyText(\`${esc(value).replace(/`/g,"'")}\`)">Copy</button>` : '';
+  return `<div class="result-card ${cls||'neutral'}">
+    <div class="card-top"><span class="result-field">${label}</span>
+      <div class="card-right">${badge}${copy}</div></div>
+    <div class="result-value ${shown?'':'not-found'}">${shown?esc(value):'Not stated'}</div></div>`;
+}
+
+function renderResults() {
+  // On-screen result cards were removed by request — go straight to exports.
+  // We still populate JF (the field values the JSON export reads) from the extraction.
+  JF = { ...derivedFields() };
+
+  document.getElementById('resultsPanel').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = false;
+  refreshExportButtons();
+}
+
+function refreshExportButtons() {
+  const hasEng = mode === 'lender' && R && R.engagement;
+  document.getElementById('dlValBtn').disabled = !hasEng;
+  document.getElementById('dlInsBtn').disabled = !hasEng;
+  const hasContract = R && R.contract && R.contract.contract_found !== false;
+  document.getElementById('dlConBtn').disabled = !hasContract;
+}
+// ═════════════════════════════════════════════════════════════
+// Editable JSON form  — pre-filled from extraction, user-adjustable
+// ═════════════════════════════════════════════════════════════
+let JF = {};   // current editable values keyed by field name
+
+function jfText(name, label, full, hint) {
+  return `<div class="jf-field ${full?'full':''}">
+    <span class="jf-label">${label}</span>
+    <input class="jf-input" data-jf="${name}" value="${escAttr(JF[name] ?? '')}" oninput="onJfInput(this)" />
+    ${hint?`<span class="jf-hint ${hint.derived?'jf-derived':''}">${esc(hint.text)}</span>`:''}
+  </div>`;
+}
+function jfSelect(name, label, options, hint) {
+  const opts = options.map(o => `<option value="${escAttr(o)}" ${JF[name]===o?'selected':''}>${esc(o)}</option>`).join('');
+  return `<div class="jf-field">
+    <span class="jf-label">${label}</span>
+    <select class="jf-select" data-jf="${name}" onchange="onJfInput(this)">${opts}</select>
+    ${hint?`<span class="jf-hint ${hint.derived?'jf-derived':''}">${esc(hint.text)}</span>`:''}
+  </div>`;
+}
+function jfCheck(name, label) {
+  return `<div class="jf-field">
+    <span class="jf-label">${label}</span>
+    <label class="jf-check"><input type="checkbox" data-jf="${name}" ${JF[name]?'checked':''} onchange="onJfInput(this)" />
+      <span class="jf-hint">${JF[name]?'true':'false'}</span></label>
+  </div>`;
+}
+function onJfInput(el) {
+  const name = el.dataset.jf;
+  if (el.type === 'checkbox') { JF[name] = el.checked; el.nextElementSibling.textContent = el.checked?'true':'false'; }
+  else JF[name] = el.value;
+  updateJsonPreview();
+}
+
+function buildJsonForm() {
+  JF = { ...derivedFields() };
+  const f = document.getElementById('jsonForm');
+  if (!f) return;
+  const insHint = { text: 'Auto-inferred from form; edit if needed', derived: true };
+  let h = '';
+  h += jfText('property_address', 'Property Address', true);
+  h += jfText('borrower_name', 'Borrower Name', true);
+
+  if (mode === 'private') {
+    h += jfText('order_number', 'Order Number (optional)');
+    h += jfSelect('inspection_type', 'Inspection Type', ['', 'Interior', 'Exterior'], insHint);
+    h += jfText('amc', 'AMC');            // "Private"
+    h += jfText('form_type', 'Form Type'); // "Private Inspection"
+    h += jfText('fee', 'Fee (optional)');
+    h += jfText('due_date', 'Due Date (optional)');
+    h += jfText('contact_name', 'Contact Name', true);
+    h += jfText('contact_phone', 'Contact Phone');
+    h += jfText('contact_email', 'Contact Email');
+    h += jfText('how_did_you_find_us', 'How Did You Find Us', true);
+    h += jfText('additional_comments', 'Additional Comments', true);
+    h += jfText('notes', 'Notes', true);
+  } else {
+    h += jfText('order_number', 'Order Number');
+    h += jfSelect('inspection_type', 'Inspection Type', ['', 'Interior', 'Exterior'], insHint);
+    h += jfText('amc', 'AMC');
+    h += jfText('lender', 'Lender');
+    h += jfText('form_type', 'Form Type', false, { text: 'From ordered form(s)', derived: true });
+    h += jfText('loan_type', 'Loan Type');
+    h += jfSelect('fha_usda', 'FHA / USDA', ['No', 'Yes'], { text: 'Auto from loan type', derived: true });
+    h += jfText('fee', 'Fee');
+    h += jfText('due_date', 'Due Date');
+    h += jfText('contact_name', 'Contact Name');
+    h += jfText('contact_phone', 'Contact Phone');
+    h += jfText('contact_email', 'Contact Email');
+    h += jfCheck('flood_map_alt_required', 'Flood Map Alt Required');
+    h += jfCheck('multiple_parcels', 'Multiple Parcels');
+    h += jfText('parcel_ids', 'Parcel IDs (comma-separated)', true);
+    h += jfText('notes', 'Notes', true);
+  }
+  f.innerHTML = h;
+  // parcel_ids stored as array in JF; show as comma string in the input
+  const pidEl = f.querySelector('[data-jf="parcel_ids"]');
+  if (pidEl) pidEl.value = (JF.parcel_ids || []).join(', ');
+  updateJsonPreview();
+}
+
+// Assemble the final JSON object in the EXACT template shape.
+function buildOrderJson() {
+  const feeVal = (() => {
+    const raw = (JF.fee ?? '').toString().replace(/[$,]/g,'').trim();
+    if (raw === '') return null;
+    const num = Number(raw);
+    return isNaN(num) ? JF.fee : num;
+  })();
+  const parcels = (JF.parcel_ids && Array.isArray(JF.parcel_ids))
+    ? JF.parcel_ids
+    : (JF.parcel_ids || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+  const addlForms = Array.isArray(JF.additional_forms)
+    ? JF.additional_forms.filter(Boolean)
+    : (JF.additional_forms || '').toString().split(',').map(s => s.trim()).filter(Boolean);
+
+  if (mode === 'private') {
+    return {
+      order_type: 'private',
+      is_private_order: true,
+      order_number: JF.order_number ? JF.order_number : null,
+      property_address: JF.property_address || '',
+      borrower_name: JF.borrower_name || '',
+      amc: JF.amc || 'Private',
+      lender: null,
+      assigned_to: JF.assigned_to || '',
+      inspection_type: JF.inspection_type || '',
+      form_type: JF.form_type || 'Private Inspection',
+      additional_forms: addlForms,
+      loan_type: null,
+      fha_usda: JF.fha_usda || 'No',
+      fee: feeVal,
+      due_date: JF.due_date ? JF.due_date : null,
+      contact_name: JF.contact_name || '',
+      contact_phone: JF.contact_phone || '',
+      contact_email: JF.contact_email || '',
+      private_order_fields: {
+        how_did_you_find_us: JF.how_did_you_find_us || '',
+        additional_comments: JF.additional_comments || ''
+      },
+      notes: JF.notes || ''
+    };
+  }
+  return {
+    order_type: 'amc',
+    is_private_order: false,
+    order_number: JF.order_number || '',
+    property_address: JF.property_address || '',
+    borrower_name: JF.borrower_name || '',
+    amc: JF.amc || '',
+    lender: JF.lender || '',
+    assigned_to: JF.assigned_to || '',
+    inspection_type: JF.inspection_type || '',
+    form_type: JF.form_type || '',
+    additional_forms: addlForms,
+    loan_type: JF.loan_type || '',
+    fha_usda: JF.fha_usda || 'No',
+    fee: feeVal,
+    due_date: JF.due_date || '',
+    contact_name: JF.contact_name || '',
+    contact_phone: JF.contact_phone || '',
+    contact_email: JF.contact_email || '',
+    flood_map_alt_required: !!JF.flood_map_alt_required,
+    multiple_parcels: !!JF.multiple_parcels,
+    parcel_ids: parcels,
+    notes: JF.notes || ''
+  };
+}
+function updateJsonPreview() {
+  const el = document.getElementById('jsonPreview');
+  if (el) el.textContent = JSON.stringify(buildOrderJson(), null, 2);
+}
+function toggleJsonPreview() {
+  const p = document.getElementById('jsonPreview');
+  const btn = p.previousElementSibling;
+  const showing = p.style.display === 'block';
+  p.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? 'Show JSON' : 'Hide JSON';
+}
+// ═════════════════════════════════════════════════════════════
+// Export sheets → PNG
+// ═════════════════════════════════════════════════════════════
+const ROLE_LABEL = { inspector: 'Inspector Requirements', valuator: 'Valuator Requirements', contract: 'Purchase Contract Summary' };
+
+function exHas(v) { return v !== null && v !== undefined && v !== '' && v !== 'null'; }
+function exEsc(s) { return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function exAssignment(d) {
+  const ai = d.assignment_information || {};
+  const forms = (ai.forms||[]).map(f => `${exEsc(f.form_number)}${f.form_name?' — '+exEsc(f.form_name):''} (${exEsc(f.role)})`).join('<br>') || '—';
+  const rows = [
+    ['Subject', ai.subject_property_address],
+    ['Form(s)', forms, true],
+    ['Assignment Type', ai.assignment_type],
+    ['Loan Type', ai.loan_type],
+    ['AMC', ai.amc],
+    ['Lender / Client', ai.lender_client_name],
+    ['Borrower(s)', (ai.borrower_names||[]).join(', ')]
+  ];
+  const kv = rows.map(([k,v,raw]) => `<div class="k">${k}</div><div class="v">${raw?v:(exHas(v)?exEsc(v):'—')}</div>`).join('');
+  return `<div class="ex-sec"><div class="ex-sec-h">Assignment Information</div><div class="ex-kv">${kv}</div></div>`;
+}
+function exStops(d) {
+  const stops = (d.stop_and_contact_issues||{}).hard_stops || [];
+  let h = '<div class="ex-sec"><div class="ex-sec-h">Stop Issues</div>';
+  if (stops.length) stops.forEach(s => h += `<div class="ex-line stop"><span class="tag">Stop</span>${exEsc(s.condition)}</div>`);
+  else h += '<div class="ex-line">None identified.</div>';
+  return h + '</div>';
+}
+function exPhotos(d) {
+  const photos = (d.required_subject_photos||[]).filter(exHas);
+  let h = '<div class="ex-sec"><div class="ex-sec-h">Required Subject Photos</div>';
+  h += photos.length ? `<ol class="ex-ol">${photos.map(p=>`<li>${exEsc(p)}</li>`).join('')}</ol>` : '<div class="ex-line">No specific list stated.</div>';
+  return h + '</div>';
+}
+function exComps(d) {
+  const c = d.comps||{}, a = c.as_is_as_repaired||{};
+  let h = '<div class="ex-sec"><div class="ex-sec-h">Comps</div>';
+  const closedReq = exHas(c.closed_sales_required) ? c.closed_sales_required
+    : (a.applies && a.as_repaired && exHas(a.as_repaired.closed_sales)) ? a.as_repaired.closed_sales : null;
+  const activeReq = exHas(c.active_listings_required) ? c.active_listings_required
+    : (a.applies && a.as_repaired && exHas(a.as_repaired.listings)) ? a.as_repaired.listings : null;
+  h += `<div class="ex-comps-line">Closed sales required: <b>${exHas(closedReq)?closedReq:'—'}</b> &nbsp;·&nbsp; Active listings: <b>${exHas(activeReq)?activeReq:'—'}</b></div>`;
+  if (exHas(c.distance_or_recency_rules)) h += `<div class="ex-comps-line">${exEsc(c.distance_or_recency_rules)}</div>`;
+  if (a.applies) {
+    const box = (t,o) => {
+      o = o||{}; const pl = o.placement||'unspecified';
+      const pill = pl==='grid'?'<span class="pill grid">On Grid</span>':pl==='addendum'?'<span class="pill addendum">In Addendum</span>':'';
+      return `<div class="ex-box"><div class="t">${t} ${pill}</div><div class="n">${exHas(o.closed_sales)?o.closed_sales:'—'} comps${exHas(o.listings)?' · '+o.listings+' listings':''}</div></div>`;
+    };
+    h += `<div class="ex-split">${box('As-Repaired (ARV)', a.as_repaired)}${box('As-Is', a.as_is)}</div>`;
+    if (exHas(a.notes)) h += `<div class="ex-note">${exEsc(a.notes)}</div>`;
+  }
+  return h + '</div>';
+}
+function exCommentary(d) {
+  const comm = (d.specific_commentary||[]).filter(notAnsi);
+  let h = '<div class="ex-sec"><div class="ex-sec-h">Specific Commentary</div>';
+  if (!comm.length) h += '<div class="ex-line">None stated.</div>';
+  comm.forEach(c => h += `<div class="ex-comm"><span class="topic">${exEsc(c.topic)}</span>${exHas(c.condition)?`<span class="cond">[${exEsc(c.condition)}]</span>`:''}${exHas(c.required_comment)?`<div class="body">${exEsc(c.required_comment)}</div>`:''}</div>`);
+  return h + '</div>';
+}
+
+// Contract summary sheet
+function exContractSheet() {
+  const c = R.contract || {};
+  const am = (c.address_match||'').toUpperCase();
+  const addrBadge = am==='YES'?'<span class="ex-badge match">Match</span>'
+    : am==='NO'?'<span class="ex-badge mismatch">Mismatch</span>'
+    : am==='PARTIAL'?'<span class="ex-badge warn">Partial</span>':'';
+  const rows = [
+    ['Contract Address', (c.contract_address||'—') , addrBadge],
+    ['Buyer / Borrower', c.buyer_names],
+    ['Seller', c.seller_names],
+    ['Sale Price', c.sale_price],
+    ['Contract Date', c.contract_date],
+    ['Loan Type', c.loan_type],
+    ['Deposits', c.deposits],
+    ['Seller Concessions', c.seller_concessions],
+    ['Home Warranty', c.home_warranty],
+    ['Personal Property', c.personal_property]
+  ];
+  if (c.multiple_parcels) rows.push(['Parcels', 'Multiple' + ((c.parcel_ids||[]).length?': '+c.parcel_ids.join(', '):'')]);
+  let kv = rows.map(([k,v,badge]) => `<div class="k">${k}</div><div class="v">${exHas(v)?exEsc(v):'—'}${badge||''}</div>`).join('');
+  let h = `<div class="ex-sec"><div class="ex-sec-h green">Contract Details</div><div class="ex-kv">${kv}</div></div>`;
+  if (exHas(c.address_note)) h += `<div class="ex-note">Address note: ${exEsc(c.address_note)}</div>`;
+  if (exHas(c.confidence_note)) h += `<div class="ex-note">Confidence ${exEsc(c.confidence)} — ${exEsc(c.confidence_note)}</div>`;
+  return h;
+}
+
+const ROLE_BUILDERS = {
+  inspector: () => exAssignment(R.engagement) + exPhotos(R.engagement) + exStops(R.engagement),
+  valuator:  () => exAssignment(R.engagement) + exComps(R.engagement) + exCommentary(R.engagement) + exStops(R.engagement),
+  contract:  () => exContractSheet()
+};
+
+function buildSheet(role) {
+  if (!R) return null;
+  const date = new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  const green = role === 'contract';
+  const sheet = document.getElementById('exportSheet');
+
+  let h1, meta;
+  if (role === 'contract') {
+    const c = R.contract || {};
+    h1 = exHas(c.contract_address) ? exEsc(c.contract_address) : (subjectAddress() ? exEsc(subjectAddress()) : 'Purchase Contract');
+    meta = [exHas(c.sale_price)?'<b>'+exEsc(c.sale_price)+'</b>':'', exHas(c.buyer_names)?'Buyer: '+exEsc(c.buyer_names):''].filter(Boolean).join('  ·  ');
+  } else {
+    const ai = R.engagement.assignment_information || {};
+    const ident = [(ai.forms||[]).map(f=>f.form_number).join(' + '), ai.assignment_type].filter(exHas).join('  ·  ');
+    h1 = exHas(ai.subject_property_address) ? exEsc(ai.subject_property_address) : 'Appraisal Engagement';
+    meta = `${exHas(ident)?'<b>'+exEsc(ident)+'</b><br>':''}${exHas(ai.lender_client_name)?'Client: '+exEsc(ai.lender_client_name):''}${exHas(ai.amc)?'  ·  AMC: '+exEsc(ai.amc):''}`;
+  }
+  sheet.innerHTML =
+    `<div class="ex-head"><span class="ex-date">${date}</span>
+      <div class="ex-role ${green?'green':''}">${ROLE_LABEL[role]}</div>
+      <div class="ex-h1">${h1}</div>
+      <div class="ex-meta">${meta}</div>
+    </div>` +
+    ROLE_BUILDERS[role]() +
+    `<div class="ex-foot">Generated by New Order Process — verify against the source documents before relying on this summary.</div>`;
+  return sheet;
+}
+
+async function renderAndDownload(role) {
+  const node = buildSheet(role);
+  if (!node) return;
+  await new Promise(r => setTimeout(r, 60));
+  const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: node.scrollWidth });
+  const fname = ROLE_LABEL[role] + '.png';
+  await new Promise(res => {
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname; a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); res(); }, 120);
+    }, 'image/png');
+  });
+}
+
+async function downloadSheet(role) {
+  if (!R) return;
+  const btn = { valuator:'dlValBtn', inspector:'dlInsBtn', contract:'dlConBtn' }[role];
+  const el = document.getElementById(btn);
+  const orig = el.textContent; el.disabled = true; el.textContent = '…';
+  try { await renderAndDownload(role); }
+  catch (e) { showErr('Export failed: ' + e.message); }
+  finally { el.disabled = false; el.textContent = orig; refreshExportButtons(); }
+}
+
+function downloadJson() {
+  if (!R) return;
+  const obj = buildOrderJson();
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (mode === 'private' ? 'Private' : 'Lender') + ' Order.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 120);
+}
+
+async function generateAll() {
+  if (!R) return;
+  const btn = document.getElementById('genAllBtn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    if (mode === 'lender' && R.engagement) {
+      await renderAndDownload('valuator');
+      await new Promise(r => setTimeout(r, 350));
+      await renderAndDownload('inspector');
+      await new Promise(r => setTimeout(r, 350));
+    }
+    if (R.contract && R.contract.contract_found !== false) {
+      await renderAndDownload('contract');
+      await new Promise(r => setTimeout(r, 350));
+    }
+    downloadJson();
+  } catch (e) {
+    showErr('Generate All failed: ' + e.message);
+  } finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+// ═════════════════════════════════════════════════════════════
+// Utilities
+// ═════════════════════════════════════════════════════════════
+function showErr(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = '⚠ ' + msg; box.style.display = 'block';
+}
+function copyText(t) { navigator.clipboard.writeText(t); }
+
+function copyAll() {
+  if (!R) return;
+  const L = [];
+  if (mode === 'lender' && R.engagement) {
+    const d = R.engagement, ai = d.assignment_information || {};
+    L.push('ASSIGNMENT INFORMATION');
+    L.push('Subject: ' + (ai.subject_property_address||'—'));
+    L.push('Forms: ' + (ai.forms||[]).map(f=>`${f.form_number} (${f.role})`).join(', '));
+    L.push('Assignment Type: ' + (ai.assignment_type||'—'));
+    L.push('Loan Type: ' + (ai.loan_type||'—'));
+    L.push('AMC: ' + (ai.amc||'—'));
+    L.push('Lender/Client: ' + (ai.lender_client_name||'—'));
+    L.push('Borrower(s): ' + ((ai.borrower_names||[]).join(', ')||'—'));
+    L.push('');
+    L.push('HARD STOPS');
+    (d.stop_and_contact_issues?.hard_stops||[]).forEach(h => L.push('• ' + h.condition));
+    const cm = d.comps || {};
+    L.push('');
+    L.push('COMPS');
+    L.push('Closed sales: ' + (cm.closed_sales_required??'—') + ' | Active listings: ' + (cm.active_listings_required??'—'));
+    L.push('');
+    L.push('REQUIRED SUBJECT PHOTOS');
+    (d.required_subject_photos||[]).forEach(p => L.push('• ' + p));
+    L.push('');
+    L.push('SPECIFIC COMMENTARY');
+    (d.specific_commentary||[]).filter(notAnsi).forEach(c => L.push('• ' + c.topic + (c.condition?(' ['+c.condition+']'):'') + (c.required_comment?(': '+c.required_comment):'')));
+    L.push('');
+  }
+  const c = R.contract || {};
+  L.push('PURCHASE CONTRACT');
+  L.push('Address: ' + (c.contract_address||'—') + (c.address_match?(' ['+c.address_match+']'):''));
+  L.push('Buyer: ' + (c.buyer_names||'—') + ' | Seller: ' + (c.seller_names||'—'));
+  L.push('Sale Price: ' + (c.sale_price||'—') + ' | Date: ' + (c.contract_date||'—'));
+  L.push('Loan: ' + (c.loan_type||'—') + ' | Deposits: ' + (c.deposits||'—'));
+  L.push('Concessions: ' + (c.seller_concessions||'—') + ' | Warranty: ' + (c.home_warranty||'—'));
+  L.push('Personal Property: ' + (c.personal_property||'—'));
+  L.push('');
+  L.push('ORDER JSON (' + (mode==='private'?'Private':'Lender') + ')');
+  L.push(JSON.stringify(buildOrderJson(), null, 2));
+
+  navigator.clipboard.writeText(L.join('\n'));
+  const btn = document.querySelector('.copy-all-btn');
+  btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Summary', 1600);
+}
+
+function resetTool() {
+  currentFiles = []; lastRaw = ''; R = null; JF = {};
+  renderFileChips();
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  updateAnalyzeBtn();
+}
+</script>
+</body>
+</html>
